@@ -1,6 +1,6 @@
 import torch
 
-def compute_meshgrid(pw, nz, nx, z_lims=None, x_lims=None, dtype=torch.float16, device='cuda'):
+def compute_meshgrid(pw, nz, nx, z_lims=None, x_lims=None, device='cuda', dtype=torch.float32):
     """
     Compute meshgrid using PyTorch for GPU acceleration.
 
@@ -26,7 +26,7 @@ def compute_meshgrid(pw, nz, nx, z_lims=None, x_lims=None, dtype=torch.float16, 
     return Z, X
 
 
-def compute_d_rx(pw, Z, X, dtype=torch.float16, device='cuda'):
+def compute_d_rx(pw, Z, X, device='cuda', dtype=torch.float32):
     """
     Compute receive distances using PyTorch for GPU acceleration.
 
@@ -45,7 +45,7 @@ def compute_d_rx(pw, Z, X, dtype=torch.float16, device='cuda'):
     return d_rx
 
 
-def compute_d_tx(pw, Z, X, angle_indices=None, dtype=torch.float16, device='cuda'):
+def compute_d_tx(pw, Z, X, angle_indices=None, device='cuda', dtype=torch.float32):
     """
     Compute transmit distances using PyTorch for GPU acceleration.
 
