@@ -1,5 +1,5 @@
 import torch
-from ..beamformers import RFGridSampleDAS, RFInterDAS
+from ..beamformers import DASGridSample, DASManual, FDMAS
 from ..beamformers import compute_meshgrid, compute_d_tx, compute_d_rx
 from ..beamformers import dynamic_receive_aperture
 
@@ -19,27 +19,31 @@ class BenchmarkWrapper:
         self.device = device
         self.dtype = dtype
 
-        self.nz, self.nx = nz, nx
         self.c0 = pw.c0
         self.fs = pw.fs
+        self.f0 = pw.fc
         self.rf = torch.from_numpy(pw.data[angles_idx]).to(device=device, dtype=dtype) # [n_angles, n_elements, n_samples]
-        self.t0 = torch.from_numpy(pw.t0[angles_idx]).to(device=device, dtype=dtype)
+        self.t0 = torch.from_numpy(pw.t0[angles_idx]).to(device=device, dtype=dtype) # [n_angles]
 
         self.beamformers = []
 
         for name in bf_names:
             match name:
-                case "RFGridSampleDAS":
-                    bf_name = "RFGridSampleDAS"
-                    bf = RFGridSampleDAS(batch_size=12, device=device, dtype=dtype)
+                case "DASGridSample":
+                    bf_name = "DASGridSample"
+                    bf = DASGridSample(batch_size=12, device=device, dtype=dtype)
                     metadata = ClassicMetadata("DAS", "Grid Sample", self.f_num, self.window)
-                case "RFInterDAS":
-                    bf_name = "RFInterDAS"
-                    bf = (RFInterDAS(batch_size=1, device=device, dtype=dtype))
+                case "DASManual":
+                    bf_name = "DASManual"
+                    bf = DASManual(batch_size=1, device=device, dtype=dtype)
                     metadata = ClassicMetadata("DAS", "Grid Sample", self.f_num, self.window)
+                case "FDMAS":
+                    bf_name = "FDMAS"
+                    bf = FDMAS(BW=0.8, for_dmas=False, batch_size=8, device=device, dtype=dtype)
+                    metadata = ClassicMetadata("fDMAS", "Grid Sample", self.f_num, self.window)
                 case _:
-                    bf_name = "RFGridSampleDAS"
-                    bf = RFGridSampleDAS(batch_size=12, device=device, dtype=dtype)
+                    bf_name = "DASGridSample"
+                    bf = DASGridSample(batch_size=12, device=device, dtype=dtype)
                     metadata = ClassicMetadata("DAS", "Grid Sample", self.f_num, self.window)
                 
             self.beamformers.append((bf_name, bf, metadata))
@@ -54,8 +58,8 @@ class BenchmarkWrapper:
     def compute_reconstructions(self):
         out = {}
 
-        for i, (bf_name, bf, metadata) in enumerate(self.beamformers):
-            data = bf(self.rf, self.t0, self.d_tx, self.d_rx, self.fs, self.c0, self.apod)
+        for bf_name, bf, metadata in self.beamformers:
+            data = bf(self.rf, self.t0, self.d_tx, self.d_rx, self.fs, self.f0, self.c0, self.apod)
             
             reconstruction = Reconstruction(data, self.Z, self.X, metadata)
             out[bf_name] = reconstruction

@@ -1,15 +1,21 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.fft
 
-class DASGridSample(nn.Module):
-    def __init__(self, batch_size=5, device="cuda", dtype=torch.float32):
+from .utils.bp_filter import get_freqs, pass_band_filter
+
+class FDMAS(nn.Module):
+    def __init__(self, BW=0.7, for_dmas=True, batch_size=5, device="cuda", dtype=torch.float32):
         """
         Args:
             angles_idx: Índices de los ángulos a procesar
             batch_size: Número de ángulos a procesar simultáneamente (default: 10)
         """
         super().__init__()
+        self.BW = BW
+        self.for_dmas = for_dmas
+
         self.batch_size = batch_size
         self.device = device
         self.dtype = dtype
@@ -24,11 +30,15 @@ class DASGridSample(nn.Module):
         Returns:
             das: Beamformed data con shape [n_angles, nz, nx]
         """
+
         _, nz, nx = d_tx.shape
         n_angles, n_elements, n_samp = rf.shape
         norm_factor = 2.0 / (n_samp - 1)
 
-        das = torch.zeros(n_angles, nz, nx, dtype=self.dtype, device=self.device)
+        freqs = get_freqs(fs, f0, self.BW, self.for_dmas)
+        H = pass_band_filter(nz, freqs, "tukey50", device=self.device, dtype=self.dtype)
+
+        fdmas = torch.zeros(n_angles, nz, nx, device=self.device, dtype=self.dtype)
 
         for i in range(0, n_elements, self.batch_size):
             end_idx = min(i + self.batch_size, n_elements)
@@ -59,57 +69,19 @@ class DASGridSample(nn.Module):
             sampled = sampled.view(n_angles, batch_size_elem, nz, nx)
             sampled = sampled * apod_batch.unsqueeze(0)  # [n_angles, batch_size_elem, nz, nx] * [1, batch_size_elem, nz, nx]
 
-            das += torch.sum(sampled, dim=1)  # [n_angles, nz, nx]
+            s_hat = torch.sign(sampled) * torch.sqrt(torch.abs(sampled))
 
-        return das
+            if i == 0:
+                sum_s_hat = torch.sum(s_hat, dim=1)
+                sum_abs_s = torch.sum(torch.abs(sampled), dim=1)
+            else:
+                sum_s_hat += torch.sum(s_hat, dim=1)
+                sum_abs_s += torch.sum(torch.abs(sampled), dim=1)
 
-class DASManual(nn.Module):
-    def __init__(self, batch_size=1, device="cuda", dtype=torch.float32):
-        super().__init__()
-        self.batch_size = batch_size
-        self.device = device
-        self.dtype = dtype
+        fdmas = 0.5 * (sum_s_hat**2 - sum_abs_s)  # [n_angles, nz, nx]
+        fdmas = torch.fft.rfft(fdmas, dim=1) # [n_angles, nz//2+1, nx]
+        H = H[:nz//2+1]
+        fdmas *= H[None, :, None]
+        fdmas = torch.fft.irfft(fdmas, n=nz, dim=1).real
 
-    def forward(self, rf, t0, d_tx, d_rx, fs, f0, c0, apod):
-        """
-        Beamforming DAS usando interpolación lineal manual (sustituye a grid_sample).
-        d_tx: [n_angles, nz, nx]
-        d_rx: [n_elements, nz, nx]
-        apod: [n_elements, nz, nx]
-        """
-        _, nz, nx = d_tx.shape
-        n_angles, n_elements, n_samples = rf.shape
-        
-        das_all = torch.zeros(n_angles, nz, nx, dtype=self.dtype, device=self.device)
-
-        for i in range(0, n_angles, self.batch_size):
-            end_idx = min(i + self.batch_size, n_angles)
-            batch_ang = end_idx - i
-
-            rf_b = rf[i:end_idx] # [batch, n_elements, n_samples]
-            d_tx_b = d_tx[i:end_idx] # [batch, nz, nx]
-            t0_b = t0[i:end_idx] # [batch]
-
-            tau = t0_b.view(-1, 1, 1, 1) + (d_tx_b.unsqueeze(1) + d_rx.unsqueeze(0)) / c0
-            s_idx = tau * fs
-
-            s_idx = torch.clamp(s_idx, 0.0, float(n_samples - 1.001))
-
-            idx_low = s_idx.long()
-            idx_high = idx_low + 1
-            idx_frac = s_idx - idx_low.float()
-
-            # flat_idx: [batch, n_elements, nz*nx]
-            flat_idx_low = idx_low.view(batch_ang, n_elements, -1)
-            flat_idx_high = idx_high.view(batch_ang, n_elements, -1)
-
-            s_low = torch.gather(rf_b, 2, flat_idx_low).view(batch_ang, n_elements, nz, nx)
-            s_high = torch.gather(rf_b, 2, flat_idx_high).view(batch_ang, n_elements, nz, nx)
-
-            sampled = s_low + idx_frac * (s_high - s_low)
-
-            weighted = sampled * apod.unsqueeze(0) # [batch, n_elements, nz, nx]
-            
-            das_all[i:end_idx] = torch.sum(weighted, dim=1)
-
-        return das_all
+        return fdmas
