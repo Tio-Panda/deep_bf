@@ -11,4 +11,5 @@ from .utils.bp_filter import get_freqs, pass_band_filter
 
 from .das import DASGridSample, DASManual
 from .dmas import FDMAS
+from .mv import MVB
 

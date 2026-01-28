@@ -1,5 +1,5 @@
 import torch
-from ..beamformers import DASGridSample, DASManual, FDMAS
+from ..beamformers import DASGridSample, DASManual, FDMAS, MVB
 from ..beamformers import compute_meshgrid, compute_d_tx, compute_d_rx
 from ..beamformers import dynamic_receive_aperture
 
@@ -41,6 +41,12 @@ class BenchmarkWrapper:
                     bf_name = "FDMAS"
                     bf = FDMAS(BW=0.8, for_dmas=False, batch_size=8, device=device, dtype=dtype)
                     metadata = ClassicMetadata("fDMAS", "Grid Sample", self.f_num, self.window)
+                case "MVB":
+                    bf_name = "MVB"
+                    bf = MVB(
+                         device=self.device,
+                         dtype=self.dtype)
+                    metadata = ClassicMetadata("MVB", "Grid Sample", self.f_num, self.window)
                 case _:
                     bf_name = "DASGridSample"
                     bf = DASGridSample(batch_size=12, device=device, dtype=dtype)
