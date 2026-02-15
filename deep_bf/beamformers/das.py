@@ -38,7 +38,8 @@ class DASGridSample(nn.Module):
             d_rx_batch = d_rx[i:end_idx, :, :]  # [batch_size_elem, nz, nx]
             apod_batch = apod[i:end_idx, :, :]  # [batch_size_elem, nz, nx]
 
-            total_delay = (d_tx.unsqueeze(1) + d_rx_batch.unsqueeze(0)) / c0 - t0.view(-1, 1, 1, 1)
+            # total_delay = (d_tx.unsqueeze(1) + d_rx_batch.unsqueeze(0)) / c0 + t0.view(-1, 1, 1, 1)
+            total_delay = (d_tx.unsqueeze(1) + d_rx_batch.unsqueeze(0)) / c0 + t0.view(-1, 1, 1, 1)
             delays_batch = total_delay * fs # [n_angles, batch_size_elem, nz, nx]
 
             x_folded = rf_batch.reshape(n_angles * batch_size_elem, 1, 1, n_samp)

@@ -71,3 +71,36 @@ class BenchmarkWrapper:
             out[bf_name] = reconstruction
 
         return out
+
+    def get_samples_idx_by_angle(self, angle):
+        import torch.nn.functional as F
+        grid_template = None
+        _rf = self.rf[angle]
+        _d_tx = self.d_tx[angle]
+        _t0 = self.t0[angle]
+        
+        nz, nx = _d_tx.shape
+        n_channels, n_samples = _rf.shape
+        norm_factor = 2.0 / (n_samples - 1)
+
+        samples = self.fs * (((_d_tx.unsqueeze(0) + self.d_rx) / self.c0) + _t0)
+
+        return samples
+        # x = _rf.view(n_channels, 1, 1, n_samples)
+        # 
+        # if grid_template is None or grid_template.shape[:3] != (n_channels, nz, nx):
+        #     grid_template = torch.empty(n_channels, nz, nx, 2, device=self.device, dtype=self.dtype)
+        # 
+        # grid_template[..., 1] = 0
+        # grid_template[..., 0] = samples * norm_factor - 1.0
+        # samples_idx = F.grid_sample(
+        #     x, 
+        #     grid_template,
+        #     mode="bilinear",
+        #     padding_mode="zeros",
+        #     align_corners=True
+        # )
+        #
+        # return samples_idx.squeeze()
+
+
