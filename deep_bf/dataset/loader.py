@@ -5,9 +5,6 @@ import numpy as np
 
 def prepare(sample):
     sample["sii.txt"] = int(sample["sii.txt"])
-    sample["rf.npy"] = np.expand_dims(sample["rf.npy"], axis=-1)
-    sample["gt.npy"] = np.expand_dims(sample["gt.npy"], axis=-1)
-
     return sample
 
 def define_dataset(urls, batch_size, seed, is_train=True):

@@ -20,7 +20,7 @@ class DAS(nn.Module):
         samples_idx = self.gsi.samples_idx[unique_ids]
         samples_idx = samples_idx.to(device=self.device, non_blocking=True)
 
-        B, nc, ns, K = rfs.shape
+        B, K, nc, ns = rfs.shape
         _, _, nz, nx = samples_idx.shape
         
         norm_factor = 2.0 / (ns - 1)
@@ -30,7 +30,7 @@ class DAS(nn.Module):
             mask = (inverse_idxs == u)
             n_rf = mask.sum().item()
 
-            filtered_rfs = rfs[mask].permute(0, 3, 1, 2)
+            filtered_rfs = rfs[mask]
             selected_samples_idx = samples_idx[u]
 
             for c_start in range(0, nc, self.chunk_size):

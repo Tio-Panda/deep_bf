@@ -8,23 +8,29 @@ import shutil
 
 from .utils import GlobalSamplesIdx
 
-def shard_writer(gsi, path, files, transform):
+def shard_writer(gsi, path, files, metadata):
     if path.exists():
         shutil.rmtree(path)
     path.mkdir(parents=True)
+
+    C = metadata["order"].find("C")
+    W = metadata["order"].find("W") - 1
+    H = metadata["order"].find("H") - 1
 
     with wds.ShardWriter(f"{path}/dataset-%03d.tar", maxcount=100) as sink:
         for file in files:
             name = file.stem
             with h5py.File(file, "r") as f:
-                rf = f["rf"][:]
+                rf: np.ndarray = f["rf"][:] # type: ignore
+                rf = rf.transpose(W, H)
+                rf = np.expand_dims(rf, axis=C)
 
-                if transform:
+                if metadata["transform"]:
                     rf_max = rf / np.max(np.abs(rf))
                     sigma = np.std(rf_max) + 1e-8
                     rf = rf_max / sigma
 
-                gt  = f["ground_truth"][:]
+                gt: np.ndarray = f["ground_truth"][:] # type: ignore
                 samples_idx_id = str(gsi[name])
 
                 sink.write({
@@ -34,9 +40,8 @@ def shard_writer(gsi, path, files, transform):
                     "sii.txt": samples_idx_id
                 })
 
-def split_webdataset(raw_path, webdataset_path, seed=42, ratio=0.9, transform=True):
-    metadata = { "seed": seed, "ratio": ratio, "transform": transform }
-    rng = random.Random(seed)
+def split_webdataset(raw_path, webdataset_path, metadata):
+    rng = random.Random(metadata["seed"])
     gsi = GlobalSamplesIdx()
 
     raw_path = Path(raw_path)
@@ -50,14 +55,14 @@ def split_webdataset(raw_path, webdataset_path, seed=42, ratio=0.9, transform=Tr
     n_files = len(files)
     metadata["n_dataset"] = n_files
 
-    train = int(n_files * ratio)
+    train = int(n_files * metadata["ratio"])
     train_files = files[:train]
     val_files = files[train:]
     metadata["n_train"] = len(train_files)
     metadata["n_val"] = len(val_files)
 
-    shard_writer(gsi, train_path, train_files, transform)
-    shard_writer(gsi, val_path, val_files, transform)
+    shard_writer(gsi, train_path, train_files, metadata)
+    shard_writer(gsi, val_path, val_files, metadata)
 
     with open(f"{webdataset_path}/metadata.json", "w") as f:
         json.dump(metadata, f, indent=4)
