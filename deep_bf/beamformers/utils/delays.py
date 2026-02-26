@@ -10,7 +10,7 @@ def compute_meshgrid(pw, nz, nx, z_lims=None, x_lims=None, device='cuda', dtype=
         nx: Number of points in x direction
         z_lims: Z limits [min, max]. If None, uses pw.zlims
         x_lims: X limits [min, max]. If None, uses [-pw.aperture_width/2, pw.aperture_width/2]
-        dtype: PyTorch dtype (default: torch.float16)
+        dtype: PyTorch dtype (default: torch.float32)
         device: Device to create tensors on (default: 'cuda')
 
     Returns:

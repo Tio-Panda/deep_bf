@@ -9,7 +9,6 @@ import importlib.resources
 from .data_classes import PWData, RFData, IQData
 # from data_handlers.pwData import PWData, IQData, RFData
 
-
 class DataLoader():
     def __init__(self, data_path:str):
         """
@@ -49,9 +48,8 @@ class DataLoader():
         params["pitch"] = df["pitch"] / 1000 # [mm] -> [m]
         params["angles_range"] = np.array(ast.literal_eval(df["angles_range"]))
         params["zlims"] = np.array(ast.literal_eval(df["zlims"]))
-        params["fc"] = df["center_frecuency"] * 1e6 # [MHz] -> [Hz]
+        params["fc"] = df["fc"] * 1e6 # [MHz] -> [Hz]
         
-
         path = Path(df["path"])
         with h5py.File(path, mode="r") as f:
             if source == "PICMUS":
@@ -68,20 +66,17 @@ class DataLoader():
             else:
                 params["fs"] = np.array(f["sampling_frequency"]).item()     
 
-
-            aperture_width = params["pitch"] * df["n_channels"]
+            aperture_width = params["pitch"] * df["nc"]
             rad_range = np.radians(params["angles_range"])
-            angles = np.linspace(rad_range[0], rad_range[1], num=df["n_angles"], dtype=np.float32)
+            angles = np.linspace(rad_range[0], rad_range[1], num=df["na"], dtype=np.float32)
 
             if name[0:3] in ("TSH", "MYO", "EUT", "INS"):
                 params["t0"] = ((aperture_width/2) / params["c0"]) * np.abs(np.sin(angles))
-
                 if name[0:3] == "EUT":
                     params["t0"] += 10 / params["fs"]
 
             elif name[0:3]  == "UFL":
                 params["t0"] = -1 * np.array(f["channel_data_t0"], dtype=np.float32)
-            
                 if params["t0"].size == 1:
                     params["t0"] = np.ones_like(angles) * params["t0"]
 
@@ -90,18 +85,14 @@ class DataLoader():
                 params["t0"] = np.transpose(params["t0"])
             
             elif name[0:3] == "JHU":
-                # params["t0"] = -1 * np.array(f["time_zero"], dtype=np.float32)
                 params["t0"] = np.array(f["time_zero"], dtype=np.float32)
-
-                #params["t0"] = ((aperture_width/2) / params["c0"]) * np.abs(np.sin(angles))
                 if name[0:3] == "JHU":
                     params["t0"] -= 10 / params["fdemod"]
 
             else:
-                params["t0"] = np.zeros(df["n_angles"])
+                params["t0"] = np.zeros(df["na"])
             
             
-
             if source == "CUBDL":
                 data = np.array(f["channel_data"], dtype="float32")
             elif source == "PICMUS":
@@ -110,9 +101,8 @@ class DataLoader():
                 raise ValueError("Source options are: 'CUBDL' and 'PICMUS'")
             
             if name[0:3] == "TSH":
-                data = np.reshape(data, (128, df["n_angles"], -1))
+                data = np.reshape(data, (128, df["na"], -1))
                 data = np.transpose(data, (1, 0, 2))
-            
 
             if mode == "RF":
                 params["rfdata"] = data

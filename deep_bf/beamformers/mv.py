@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class MVB(nn.Module):
-    def __init__(self, batch_size_angle=1, nc=128, z_chunk=512, L=32, diagonal_loading=1e-3, dtype=torch.float32, device="cuda"):
+    def __init__(self, batch_size_angle=1, nc=128, z_chunk=512, L=16, diagonal_loading=5e-2, dtype=torch.float32, device="cuda"):
         super().__init__()
         self.batch_size = batch_size_angle
         self.L = L
@@ -37,7 +37,7 @@ class MVB(nn.Module):
         
         self.grid_template[..., 1] = 0
         self.grid_template[..., 0] = samples * norm - 1.0
-        return F.grid_sample(x, self.grid_template, mode="bilinear", padding_mode="zeros", align_corners=True).view(a_batch, n_channels, nz, nx)
+        return F.grid_sample(x, self.grid_template, mode="bilinear", padding_mode="border", align_corners=True).view(a_batch, n_channels, nz, nx)
 
     def forward(self, rf, t0, d_tx, d_rx, fs, f0, c0, apod):
         torch.set_float32_matmul_precision('high')
@@ -64,17 +64,21 @@ class MVB(nn.Module):
                     subarrays = torch.index_select(x_flat, 1, self.subarrays_idx).view(-1, M, self.L) # [B*P, M, L]
                     
                     R = torch.bmm(subarrays.transpose(-2, -1).conj(), subarrays) / M # [B*P, L, L]
-                    
+                    R = 0.5 * (R + R.transpose(-2, -1).conj()) # +
+
                     trace_R = torch.diagonal(R, dim1=-2, dim2=-1).sum(dim=-1)
-                    R[..., self.d_idx, self.d_idx] += self.dl * trace_R[..., None]
+                    delta = trace_R[..., None] / self.L # +
+                    R[..., self.d_idx, self.d_idx] += self.dl * delta
+
                     del subarrays
                     
-                    L_mat, _ = torch.linalg.cholesky_ex(R, check_errors=False)
+                    L_mat, _ = torch.linalg.cholesky_ex(R, check_errors=True)
                     rhs = self.rhs.expand(R.shape[0], -1, -1)
                     u = torch.cholesky_solve(rhs, L_mat).squeeze(-1) 
                     
                     denom = torch.sum(u * self.a, dim=-1, keepdim=True)
-                    w = u / (denom.abs() + 1e-10)
+                    # w = u / (denom.abs() + 1e-10)
+                    w = u / (denom + 1e-10)
                     
                     y_chunk = torch.sum(w.conj() * x, dim=-1)
                     

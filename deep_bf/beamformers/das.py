@@ -53,7 +53,8 @@ class DASGridSample(nn.Module):
                 x_folded,
                 grid,
                 mode="bilinear",
-                padding_mode="zeros",
+                # padding_mode="zeros",
+                padding_mode="border",
                 align_corners=True,
             )
 

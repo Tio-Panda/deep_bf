@@ -57,6 +57,8 @@ class BenchmarkWrapper:
 
         self.Z, self.X = compute_meshgrid(pw, nz, nx, device=device, dtype=dtype)
         self.d_tx, self.t0 = compute_d_tx(pw, self.Z, self.X, device=device, dtype=dtype)
+        self.d_tx, self.t0 = self.d_tx[angles_idx], self.t0[angles_idx]
+
         self.d_rx = compute_d_rx(pw, self.Z, self.X, device=device, dtype=dtype)
 
         self.apod = dynamic_receive_aperture(self.Z, self.X, pw.probe_geometry, f_num, window, device=device, dtype=dtype)
@@ -74,33 +76,15 @@ class BenchmarkWrapper:
 
     def get_samples_idx_by_angle(self, angle):
         import torch.nn.functional as F
-        grid_template = None
+
         _rf = self.rf[angle]
         _d_tx = self.d_tx[angle]
         _t0 = self.t0[angle]
-        
-        nz, nx = _d_tx.shape
-        n_channels, n_samples = _rf.shape
-        norm_factor = 2.0 / (n_samples - 1)
+        _, ns = _rf.shape
 
         samples = self.fs * (((_d_tx.unsqueeze(0) + self.d_rx) / self.c0) + _t0)
+        samples = samples.clamp(0.0, float(ns-1))
+
+        #TODO: Ver si se puede dejar sample pero con un c0 personalizado. Pero puede ser para mas para adelante
 
         return samples
-        # x = _rf.view(n_channels, 1, 1, n_samples)
-        # 
-        # if grid_template is None or grid_template.shape[:3] != (n_channels, nz, nx):
-        #     grid_template = torch.empty(n_channels, nz, nx, 2, device=self.device, dtype=self.dtype)
-        # 
-        # grid_template[..., 1] = 0
-        # grid_template[..., 0] = samples * norm_factor - 1.0
-        # samples_idx = F.grid_sample(
-        #     x, 
-        #     grid_template,
-        #     mode="bilinear",
-        #     padding_mode="zeros",
-        #     align_corners=True
-        # )
-        #
-        # return samples_idx.squeeze()
-
-

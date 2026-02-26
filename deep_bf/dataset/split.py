@@ -30,7 +30,7 @@ def shard_writer(gsi, path, files, metadata):
                     sigma = np.std(rf_max) + 1e-8
                     rf = rf_max / sigma
 
-                gt: np.ndarray = f["ground_truth"][:] # type: ignore
+                gt: np.ndarray = f["ground_truth_mvb"][:] # type: ignore
                 samples_idx_id = str(gsi[name])
 
                 sink.write({
@@ -40,7 +40,7 @@ def shard_writer(gsi, path, files, metadata):
                     "sii.txt": samples_idx_id
                 })
 
-def split_webdataset(raw_path, webdataset_path, metadata):
+def split_webdataset(raw_path, webdataset_path, metadata, filter={}):
     rng = random.Random(metadata["seed"])
     gsi = GlobalSamplesIdx()
 
@@ -51,6 +51,8 @@ def split_webdataset(raw_path, webdataset_path, metadata):
     val_path = webdataset_path / "val"
 
     files = list(raw_path.glob("*.hdf5"))
+    files = [p for p in files if p.stem not in filter]
+
     rng.shuffle(files)
     n_files = len(files)
     metadata["n_dataset"] = n_files
