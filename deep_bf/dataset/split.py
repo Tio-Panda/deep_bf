@@ -40,9 +40,9 @@ def shard_writer(gsi, path, files, metadata):
                     "sii.txt": samples_idx_id
                 })
 
-def split_webdataset(raw_path, webdataset_path, metadata, filter={}):
+def split_webdataset(raw_path, webdataset_path, samples_idx_path, metadata, filter={}):
     rng = random.Random(metadata["seed"])
-    gsi = GlobalSamplesIdx()
+    gsi = GlobalSamplesIdx(samples_idx_path)
 
     raw_path = Path(raw_path)
     webdataset_path = Path(webdataset_path)

@@ -12,11 +12,8 @@ def set_seed(seed, id):
     np.random.seed(seed)
     random.seed(seed)
 
-SAMPLES_IDX_PATH = "/home/panda/rf_data/dataset/samples_idx"
-# SAMPLES_IDX_PATH = "/mnt/workspace/sgutierrezm/deep_bf/dataset/samples_idx"
-
 class GlobalSamplesIdx():
-    def __init__(self, samples_idx_path=SAMPLES_IDX_PATH):
+    def __init__(self, samples_idx_path):
 
         print("loading gsi")
 

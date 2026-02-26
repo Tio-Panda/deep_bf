@@ -9,6 +9,8 @@ from tqdm import tqdm
 from deep_bf.dataset import GlobalSamplesIdx, get_datasets
 from deep_bf.models import DAS
 
+from setup import LOCAL_SAMPLES_IDX_PATH, SERVER_SAMPLES_IDX_PATH, LOCAL_BASE_URL, SERVER_BASE_URL
+
 
 def def_conv2d(in_ch, out_ch, kernel_size, padding):
     m = nn.Conv2d(in_ch, out_ch, kernel_size, padding=padding, bias=True)
@@ -51,8 +53,14 @@ class Toy(nn.Module):
         return x
 
 if __name__ == "__main__":
-    base_url = "/home/panda/rf_data/dataset/webdataset"
-    # base_url = "/mnt/workspace/sgutierrezm/deep_bf/dataset/webdataset"
+    base_url = LOCAL_BASE_URL
+    #base_url = SERVER_BASE_URL
+    
+    samples_idx_path = LOCAL_SAMPLES_IDX_PATH
+    #samples_idx_path = SERVER_SAMPLES_IDX_PATH
+
+    MODEL_PATH = "./models/best_model_test.pth"
+
     seed = 42
 
     n_epoch = 100
@@ -69,7 +77,7 @@ if __name__ == "__main__":
     #
     # print(n_train, n_val)
 
-    gsi = GlobalSamplesIdx()
+    gsi = GlobalSamplesIdx(samples_idx_path)
     train_loader, val_loader = get_datasets(
         base_url, seed, batch_size, num_workers, pin_memory
     )
@@ -148,6 +156,6 @@ if __name__ == "__main__":
                     "optimizer_state_dict": optimizer.state_dict(),
                     "loss": best_val_loss,
                 },
-                "./best_model.pth",
+                MODEL_PATH,
             )
             tqdm.write("¡Modelo guardado!")
