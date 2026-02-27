@@ -16,7 +16,8 @@ send_dataset:
 send_code:
 	rsync -vrt $(LOCAL)/deep_bf $(CODE_TARGET)
 	rsync -vrt $(LOCAL)/train.py $(CODE_TARGET)
+	rsync -vrt $(LOCAL)/setup.py $(CODE_TARGET)
 	rsync -vrt $(LOCAL)/batchfile_single.sh $(CODE_TARGET)
 
 get_models:
-	rsync -azP $(SERVER):$(SERVER_HOME)/best_model.pth $(LOCAL)/best_model_server.pth
+	rsync -azP $(SERVER):$(SERVER_HOME)/best_model.pt $(LOCAL)/best_model_server_w.pt

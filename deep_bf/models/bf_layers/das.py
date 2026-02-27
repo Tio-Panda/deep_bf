@@ -79,3 +79,55 @@ class DAS(nn.Module):
                 # output[mask] += sampled.sum(dim=2)
         
         return output
+
+class DASBasic(nn.Module):
+    def __init__(self, chunk_size=64, device="cuda", dtype=torch.float32):
+        super().__init__()
+        self.device = device
+        self.dtype = dtype
+        self.chunk_size = chunk_size
+
+    def forward(self, rfs, samples_idx):
+        B, K, nc, ns = rfs.shape
+        _, _, nz, nx = samples_idx.shape
+        
+        norm_factor = 2.0 / (ns - 1)
+        output = torch.zeros(B, K, nz, nx, device=self.device, dtype=self.dtype)
+
+        for b, (_rf, _samples_idx) in enumerate(zip(rfs, samples_idx)):
+
+            for c_start in range(0, nc, self.chunk_size):
+                c_end = min(c_start + self.chunk_size, nc)
+                CHK = c_end - c_start
+
+                rf = _rf[b, :, c_start:c_end].reshape(-1, 1, 1, ns)
+
+                sidx = _samples_idx[b, c_start:c_end]
+                sidx = sidx.unsqueeze(0).expand(b * K, CHK, nz, nx).reshape(-1, nz, nx)
+
+                grid_x = sidx * norm_factor - 1.0
+                grid = torch.stack([grid_x, torch.zeros_like(grid_x)], dim=-1)
+
+                sampled = F.grid_sample(
+                    rf,
+                    grid,
+                    mode="bilinear",
+                    padding_mode="border", # "zeros"
+                    align_corners=True
+                )
+
+                sampled = sampled.view(b, K, CHK, nz, nx).sum(dim=2)
+                output[b] = sampled
+        
+        return output
+
+class WDAS(nn.Module):
+    def __init__(self, is_train, gsi, chunk_size, device, dtype):
+        super().__init__()
+        if is_train:
+            self.das = DAS(gsi, chunk_size, device, dtype)
+        else:
+            self.das = DASBasic(chunk_size, device, dtype)
+
+    def forward(self, x1, x2):
+        return self.das(x1 ,x2)

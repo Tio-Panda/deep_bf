@@ -13,4 +13,4 @@
 
 module load conda
 conda activate pytorch
-python train.py
+python train.py -server 1

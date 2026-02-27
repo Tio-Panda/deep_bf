@@ -4,62 +4,29 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import json
+import argparse
 from tqdm import tqdm
 
 from deep_bf.dataset import GlobalSamplesIdx, get_datasets
-from deep_bf.models import DAS
+from deep_bf.models import Binn
 
 from setup import LOCAL_SAMPLES_IDX_PATH, SERVER_SAMPLES_IDX_PATH, LOCAL_BASE_URL, SERVER_BASE_URL
 
-
-def def_conv2d(in_ch, out_ch, kernel_size, padding):
-    m = nn.Conv2d(in_ch, out_ch, kernel_size, padding=padding, bias=True)
-    nn.init.xavier_uniform_(m.weight)
-    nn.init.zeros_(m.bias)
-
-    return m
-
-class Toy(nn.Module):
-    def __init__(self, gsi, device="cuda", dtype=torch.float32):
-        super().__init__()
-        self.device = device
-        self.dtype = dtype
-
-        self.conv1 = def_conv2d(1, 16, (5, 3), padding="same")
-        self.conv2 = def_conv2d(16, 8, (5, 3), padding="same")
-        self.conv3 = def_conv2d(8, 8, (5, 3), padding="same")
-        self.conv4 = def_conv2d(8, 4, (5, 3), padding="same")
-        self.conv5 = def_conv2d(4, 2, (5, 3), padding="same")
-        self.conv6 = def_conv2d(2, 1, (7, 5), padding="same")
-        self.activation = nn.LeakyReLU(negative_slope=0.01)
-        self.das = DAS(gsi, device=device, dtype=dtype)
-
-    def forward(self, rfs, ids):
-        x = rfs.to(device=self.device, dtype=self.dtype)
-       
-        x = self.conv1(x)
-        x = self.activation(x)
-        x = self.conv2(x)
-        x = self.activation(x)
-        x = self.das(x, ids)
-        x = self.conv3(x)
-        x = self.activation(x)
-        x = self.conv4(x)
-        x = self.activation(x)
-        x = self.conv5(x)
-        x = self.activation(x)
-        x = self.conv6(x)
-        x = self.activation(x)
-        return x
-
 if __name__ == "__main__":
-    base_url = LOCAL_BASE_URL
-    #base_url = SERVER_BASE_URL
-    
-    samples_idx_path = LOCAL_SAMPLES_IDX_PATH
-    #samples_idx_path = SERVER_SAMPLES_IDX_PATH
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-server", "--server_enviroment", type=int, default=1)
+    args = parser.parse_args()
 
-    MODEL_PATH = "./models/best_model_test.pth"
+    IS_SERVER = args.server_enviroment
+    
+    if IS_SERVER:
+        base_url = SERVER_BASE_URL
+        samples_idx_path = SERVER_SAMPLES_IDX_PATH
+    else: 
+        base_url = LOCAL_BASE_URL
+        samples_idx_path = LOCAL_SAMPLES_IDX_PATH
+
+    MODEL_PATH = "./models/best_model_test.pt"
 
     seed = 42
 
@@ -82,7 +49,7 @@ if __name__ == "__main__":
         base_url, seed, batch_size, num_workers, pin_memory
     )
 
-    model = Toy(gsi).to(device)
+    model = Binn(3, gsi).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-7, weight_decay=0.0, amsgrad=False)
     # criterion = nn.MSELoss(reduction="sum")
@@ -149,11 +116,17 @@ if __name__ == "__main__":
 
         if avg_val < best_val_loss:
             best_val_loss = avg_val
+            # torch.save(
+            #     {
+            #         "epoch": epoch + 1,
+            #         "model_state_dict": model.state_dict(),
+            #         "optimizer_state_dict": optimizer.state_dict(),
+            #         "loss": best_val_loss,
+            #     },
+            #     MODEL_PATH,
             torch.save(
                 {
-                    "epoch": epoch + 1,
                     "model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
                     "loss": best_val_loss,
                 },
                 MODEL_PATH,
