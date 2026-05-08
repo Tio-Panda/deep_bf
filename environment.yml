@@ -1,0 +1,5 @@
+name: pytorch
+channels:
+  - defaults
+dependencies:
+  - python=3.14

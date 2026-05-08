@@ -1,32 +1,19 @@
 import numpy as np
 from abc import ABC
 
+from ..constants.bf import PWDataType
+
 class PWData(ABC):
     skip_fields = ("angles", "probe_geometry", "t0")
 
-    def __init__(
-        self, 
-        name, 
-        source,
-        pitch, 
-        angles_range, 
-        n_angles, 
-        n_channels, 
-        n_samples, 
-        c0, 
-        fs, 
-        fdemod,
-        t0,
-        zlims,
-        fc
-    ):
+    def __init__( self, name, source, pitch, angles_range, na, nc, ns, c0, fs, fdemod, t0, zlims, fc):
         self.name = name
         self.source = source
         self.pitch = pitch
         self.angles_range = angles_range
-        self.n_angles = n_angles
-        self.n_channels = n_channels
-        self.n_samples = n_samples
+        self.na = na
+        self.nc = nc
+        self.ns = ns
         self.c0 = c0
         self.fs = fs
         self.fdemod = fdemod
@@ -35,17 +22,19 @@ class PWData(ABC):
         self.fc = fc
 
         rad_range = np.radians(angles_range)
-        self.angles = np.linspace(rad_range[0], rad_range[1], num=n_angles, dtype=np.float32)
+        self.angles = np.linspace(rad_range[0], rad_range[1], num=na, dtype=np.float32)
 
-        self.aperture_width = pitch * n_channels
         #x_pos = np.linspace(-self.aperture_width/2, self.aperture_width/2, self.n_channels)
         #self.probe_geometry = np.stack((x_pos, x_pos*0, x_pos*0), axis=1, dtype=np.float32)
 
-        xpos = np.arange(n_channels) * pitch
+        xpos = np.arange(nc) * pitch
         xpos -= np.mean(xpos)
         self.probe_geometry = np.stack([xpos, 0 * xpos, 0 * xpos], axis=1)
 
-        last_sample_time = n_samples / fs
+        self.aperture_width = pitch * nc
+        self.xlims = [-self.aperture_width/2, self.aperture_width/2]
+
+        last_sample_time = nc / fs
         self.img_depth = c0 / 2 * last_sample_time
         
     def __str__(self):
@@ -68,17 +57,29 @@ class PWData(ABC):
         return "\n".join(lines)
     
 
-class IQData(PWData):
-    skip_fields = PWData.skip_fields + ("iqdata", )
+class IQSplitData(PWData):
+    # skip_fields = PWData.skip_fields + ("idata", "qdata",  )
+    skip_fields = PWData.skip_fields
 
-    def __init__(self, iqdata, *args, **kwargs):
+    def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.data = iqdata
+        self.data = data
+        self.type = PWDataType.IQ_SPLIT
 
+class IQComplexData(PWData):
+    # skip_fields = PWData.skip_fields + ("idata", "qdata",  )
+    skip_fields = PWData.skip_fields
+
+    def __init__(self, data, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data = data
+        self.type = PWDataType.IQ_COMPLEX
 
 class RFData(PWData):
-    skip_fields = PWData.skip_fields + ("rfdata", )
+    skip_fields = PWData.skip_fields
+    # skip_fields = PWData.skip_fields + ("rfdata", )
 
-    def __init__(self, rfdata, *args, **kwargs):
+    def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.data = rfdata
+        self.data = data
+        self.type = PWDataType.RF

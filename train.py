@@ -1,134 +1,36 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-
-import json
 import argparse
-from tqdm import tqdm
+import torch
 
-from deep_bf.dataset import GlobalSamplesIdx, get_datasets
-from deep_bf.models import Binn
-
-from setup import LOCAL_SAMPLES_IDX_PATH, SERVER_SAMPLES_IDX_PATH, LOCAL_BASE_URL, SERVER_BASE_URL
+from deep_bf.train.train_loop import train_loop, set_seed
+from deep_bf.config_registery import ConfigRegisteryCenter
 
 if __name__ == "__main__":
+    print("==================================================================")
     parser = argparse.ArgumentParser()
-    parser.add_argument("-server", "--server_enviroment", type=int, default=1)
+    parser.add_argument("-location", "--location", type=str, default="server")
+    parser.add_argument("-e_id", "--experiment_id", type=int, default=0)
     args = parser.parse_args()
 
-    IS_SERVER = args.server_enviroment
+    LOCATION = args.location
+    EXPERIMENT_ID = args.experiment_id
+    print(f"Executing experiment id={EXPERIMENT_ID}")
+
+    with ConfigRegisteryCenter() as cc:
+        e = cc.get_experiment_packing(id=EXPERIMENT_ID)
+        print(e)
     
-    if IS_SERVER:
-        base_url = SERVER_BASE_URL
-        samples_idx_path = SERVER_SAMPLES_IDX_PATH
-    else: 
-        base_url = LOCAL_BASE_URL
-        samples_idx_path = LOCAL_SAMPLES_IDX_PATH
+    seed = e.trainloop.hyperparameters_config.seed
+    set_seed(seed)
 
-    MODEL_PATH = "./models/best_model_test.pt"
+    e.trainloop.hyperparameters_config.batch_size = 1
 
-    seed = 42
+    INTERVAL_EPOCH_SAVE = 5
+    NUM_WORKERS = 1
+    PIN_MEMORY = False
 
-    n_epoch = 100
-    batch_size = 2
-    num_workers = 1
-    pin_memory = True
-    device = "cuda"
+    DEVICE = "cuda"
+    DTYPE = torch.float32
 
-    # with open(f"{base_url}/metadata.json", "r", encoding="utf-8") as f:
-    #     metadata = json.load(f)
-    #
-    # n_train = metadata["n_train"]
-    # n_val = metadata["n_val"]
-    #
-    # print(n_train, n_val)
+    train_loop(e, INTERVAL_EPOCH_SAVE, NUM_WORKERS, PIN_MEMORY, LOCATION, DEVICE, DTYPE)
 
-    gsi = GlobalSamplesIdx(samples_idx_path)
-    train_loader, val_loader = get_datasets(
-        base_url, seed, batch_size, num_workers, pin_memory
-    )
-
-    model = Binn(3, gsi).to(device)
-
-    optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-7, weight_decay=0.0, amsgrad=False)
-    # criterion = nn.MSELoss(reduction="sum")
-    criterion = nn.MSELoss(reduction="mean")
-
-    best_val_loss = float("inf")
-
-    for epoch in range(n_epoch):
-        model.train()
-        # train_sse = 0.0
-        train_loss_weighted = 0.0
-        train_numel = 0
-        
-        train_pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{n_epoch} [train]", leave=False)
-        for sample in train_pbar:
-            rfs, ids, targets = sample[0].to(device), sample[1].to(device), sample[2].to(device)
-
-            optimizer.zero_grad()
-            # outputs = model(rfs, ids).squeeze(1)
-            outputs = model(rfs, ids)
-            targets = targets.unsqueeze(1)
-
-            loss = criterion(outputs, targets)
-            loss.backward()
-            optimizer.step()
-
-            # train_sse += loss.item()
-            # train_numel += targets.numel()
-            batch_numel = targets.numel()
-            train_loss_weighted += loss.item() * batch_numel
-            train_numel += batch_numel
-
-            train_pbar.set_postfix(mse=(train_loss_weighted / train_numel) if train_numel else float("nan"))
-
-        avg_train = train_loss_weighted / train_numel
-
-        model.eval()
-        # val_sse = 0.0
-        val_loss_weighted = 0.0
-        val_numel = 0
-
-        with torch.no_grad():
-
-            val_pbar = tqdm(val_loader, desc=f"Epoch {epoch+1}/{n_epoch} [val]", leave=False)
-            for sample in val_pbar:
-                rfs, ids, targets = sample[0].to(device), sample[1].to(device), sample[2].to(device)
-
-                # outputs = model(rfs, ids).squeeze(1)
-                outputs = model(rfs, ids)
-                targets = targets.unsqueeze(1)
-
-                loss = criterion(outputs, targets)
-
-                # val_sse += loss.item()
-                # val_numel += targets.numel()
-                batch_numel = targets.numel()
-                val_loss_weighted += loss.item() * batch_numel
-                val_numel += batch_numel
-
-                val_pbar.set_postfix(mse=(val_loss_weighted / val_numel) if val_numel else float("nan"))
-
-        avg_val = val_loss_weighted / val_numel
-        tqdm.write(f"Epoch {epoch+1}/{n_epoch} -> Train MSE: {avg_train:.6f} | Val MSE: {avg_val:.6f}")
-
-        if avg_val < best_val_loss:
-            best_val_loss = avg_val
-            # torch.save(
-            #     {
-            #         "epoch": epoch + 1,
-            #         "model_state_dict": model.state_dict(),
-            #         "optimizer_state_dict": optimizer.state_dict(),
-            #         "loss": best_val_loss,
-            #     },
-            #     MODEL_PATH,
-            torch.save(
-                {
-                    "model_state_dict": model.state_dict(),
-                    "loss": best_val_loss,
-                },
-                MODEL_PATH,
-            )
-            tqdm.write("¡Modelo guardado!")
+    print("==================================================================")
