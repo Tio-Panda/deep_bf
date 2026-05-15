@@ -153,5 +153,37 @@ class DataLoader():
 
     #TODO: Funciones auxiliares para obtener por source y otros metodos.
 
+    def get_simulated_pwdata(self, name, mode):
+        path = self.path / "dataset" / "simulated" / f"{name}.h5"
+        with h5py.File(path, mode="r") as f:
+
+            # for key in list(f.keys()):
+            #     print(f[key])
+
+            params = {}
+            params["name"] = name
+            params["source"] = "simulated"
+            params["fdemod"] = 0
+            
+            params["na"] = int(f["na"][()].item())
+            params["nc"] = int(f["nc"][()].item())
+            params["ns"] = int(f["ns"][()].item())
+
+            params["pitch"] = f["pitch"][()].astype(np.float32).item()
+            params["c0"] = f["c0"][()].astype(np.float32).item()
+            params["fs"] = f["fs"][()].astype(np.float32).item()
+            params["fc"] = f["fc"][()].astype(np.float32).item()
+
+            params["zlims"] = f["zlims"][:].astype(np.float32)
+            params["angles_range"] = f["angles_range"][:].astype(np.float32)
+            params["t0"] = f["t0"][:].astype(np.float32)
+
+            data = f["rf"][:].astype(np.float32)
+            params["data"] = data
+
+            pw = RFData(**params)
+
+            return pw
+
     def get_df(self) -> pd.DataFrame:
         return self.df

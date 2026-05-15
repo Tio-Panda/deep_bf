@@ -69,7 +69,7 @@ class ClassicBench(nn.Module):
 
                 for bfC in self.bfs:
                     bf_type = bfC.type
-                    bf = bf_builder(bfC, self.pw.type).to(self.device)
+                    bf = bf_builder(bfC, self.pw).to(self.device)
                     for rC in self.resamplers:
                         resampler_type = rC.type
 

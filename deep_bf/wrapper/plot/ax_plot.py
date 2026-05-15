@@ -1,13 +1,27 @@
 import matplotlib.pyplot as plt
 
 from ..reconstruction.reconstruction import Reconstruction
+from ...config_registery import BeamformerConfig
 
-def simple_bmode(ax, reconstruction:Reconstruction, title, vmin=60, vmax=0, eps=1e-10):
+def get_bf_title(reconstruction: Reconstruction):
+    bfC: BeamformerConfig = reconstruction.beamformer_config
+    bf_type = bfC.type
+
+    return f"{bf_type}"
+
+
+def get_compounding_title(reconstruction: Reconstruction):
+    cC = reconstruction.compounding_config
+    cmp_type = cC.type
+
+    return f"{cmp_type}"
+
+# TODO: Agregar como parametro una funcion que con una reconstruccion me genere un subtitulo para el grafico.
+def simple_bmode(ax, reconstruction:Reconstruction, fn_title, vmin=-60, vmax=0, eps=1e-10):
     bmode = reconstruction.get_bmode(vmin, vmax, eps)
-    nz, nx = bmode.shape
 
     # TODO: setear el titulo fuera de esta funcion
-    title = f"{nz} x {nx}"
+    title = fn_title(reconstruction)
 
     zlims = reconstruction.zlims
     xlims = reconstruction.xlims
@@ -18,4 +32,4 @@ def simple_bmode(ax, reconstruction:Reconstruction, title, vmin=60, vmax=0, eps=
     ax.set_title(title)
     ax.set_axis_off()
 
-    return ax, nz, nx
+    return ax

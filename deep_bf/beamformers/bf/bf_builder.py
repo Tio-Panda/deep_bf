@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from .das import DAS3D, DAS4D
-from .dmas import FDMAS
-from .mv import MVB, MVBSimple
+from .dmas2 import FDMAS3D, FDMAS4D
+from .mv2 import MV3D, MV4D
+# from .mv3 import MV3D, MV4D
 from .cf import CF3D, CF4D
 from .imap import IMAP3D, IMAP4D
 from .sr import SR3D, SR4D
@@ -11,13 +12,21 @@ from .sr2 import SR2_3D, SR2_4D
 from ...constants.bf import BeamformerType, PWDataType
 from ...config_registery import BeamformerConfig
 
-def bf_builder(config: BeamformerConfig, data_type: str):
+
+def bf_builder(config: BeamformerConfig, pw):
     bf_type = config.type
     bf_params = config.params
+    data_type = pw.type
 
     if data_type != PWDataType.IQ_SPLIT:
         if bf_type == BeamformerType.DAS:
             bf = DAS3D(**bf_params)
+        elif bf_type == BeamformerType.FDMAS:
+            bf_params["fs"] = pw.fs
+            bf_params["f0"] = pw.fc
+            bf = FDMAS3D(**bf_params)
+        elif bf_type == BeamformerType.MV:
+            bf = MV3D(**bf_params)
         elif bf_type == BeamformerType.CF:
             bf = CF3D(**bf_params)
         elif bf_type == BeamformerType.IMAP:
@@ -31,6 +40,12 @@ def bf_builder(config: BeamformerConfig, data_type: str):
     else:
         if bf_type == BeamformerType.DAS:
             bf = DAS4D(**bf_params)
+        elif bf_type == BeamformerType.FDMAS:
+            bf_params["fs"] = pw.fs
+            bf_params["f0"] = pw.fc
+            bf = FDMAS4D(**bf_params)
+        elif bf_type == BeamformerType.MV:
+            bf = MV4D(**bf_params)
         elif bf_type == BeamformerType.CF:
             bf = CF4D(**bf_params)
         elif bf_type == BeamformerType.IMAP:

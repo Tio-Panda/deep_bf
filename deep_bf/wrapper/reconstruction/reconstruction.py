@@ -31,7 +31,8 @@ class Reconstruction:
         self.compounding_config = compounding_config
 
     def get_bmode(self, vmin=-60, vmax=0, eps=1e-10):
-        b_mode = get_bmode(self.data, vmin=vmin, vmax=vmax, eps=eps, mode=self.mode)
+        b_mode = get_bmode(self.data, self.mode, vmin=vmin, vmax=vmax, eps=eps)
+        print(b_mode.shape)
 
         return b_mode
 

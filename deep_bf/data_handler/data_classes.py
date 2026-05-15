@@ -22,6 +22,8 @@ class PWData(ABC):
         self.fc = fc
 
         rad_range = np.radians(angles_range)
+
+        # TODO: Agregar la angles original del archivo.
         self.angles = np.linspace(rad_range[0], rad_range[1], num=na, dtype=np.float32)
 
         #x_pos = np.linspace(-self.aperture_width/2, self.aperture_width/2, self.n_channels)

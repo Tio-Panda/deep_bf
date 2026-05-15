@@ -3,12 +3,9 @@ import torch.fft
 
 from ..apod.apod import get_window
 
-def get_freqs(fs, f0, BW=0.7, for_dmas=True):
-    if for_dmas:
-        f_center = 2 * f0
-    else:
-        f_center = f0
-
+def get_freqs(fs, f0, BW=0.7):
+    # f_center = 2 * f0
+    f_center = f0
     f_low = f_center * (1 - BW / 2)
     f_high = f_center * (1 + BW / 2)
 
