@@ -1,6 +1,5 @@
 from enum import StrEnum
 
-
 class PWDataType(StrEnum):
     RF = "RF"
     IQ_COMPLEX_DEMOD = "IQComplexDemod"
@@ -23,8 +22,9 @@ class ResamplerType(StrEnum):
     LINEAR_INTERPOLATION = "LinearInterpolation"
     INTEGER_FRACTIONAL_FIR = "IntegerDelayFractionalFIR"
 
-
+# TODO: Esta mal  escrito xd
 class CompooundingType(StrEnum):
+    NONE = "NONE"
     CPWC_SUM = "CoherentPlane-WaveCompoundingWithSum"
     CPWC_MEAN = "CoherentPlane-WaveCompoundingWithMean"
     ANGULAR_CPWC_SHORT_PULSE = "CoherentPlane-WaveCompoundingAngularApodizationShortPulse"

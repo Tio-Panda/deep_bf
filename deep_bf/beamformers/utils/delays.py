@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-def compute_meshgrid(pw, nz, nx, z_lims=None, x_lims=None, nyquist=True, device='cuda', dtype=torch.float32):
+def compute_meshgrid(pw, nz, nx, z_lims=None, x_lims=None, nyquist=False, device='cuda', dtype=torch.float32):
     """
     Compute meshgrid using PyTorch for GPU acceleration.
 
@@ -106,7 +106,6 @@ def compute_d_tx(pw, Z, X, angles_idx=None, device='cuda', dtype=torch.float32):
 def compute_samples_idx_by_angles(pw, Z, X, d_rx, angles_idx, device="cuda", dtype=torch.float32):
     d_tx, t0 = compute_d_tx(pw, Z, X, angles_idx=angles_idx, device=device, dtype=dtype)
     samples = pw.fs * (((d_tx.unsqueeze(1) + d_rx.unsqueeze(0)) / pw.c0) + t0.view(-1, 1, 1, 1))
-    # samples = samples.clamp(0.0, float(ns-1))
 
     #TODO: Ver si se puede dejar sample pero con un c0 personalizado. Pero puede ser para mas para adelante
 

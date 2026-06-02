@@ -6,6 +6,7 @@ class ReconstructionCatalog:
     def __init__(self):
         self._items = []
         self._all_ids = set()
+        self._index_name = defaultdict(set)
         self._index_nz = defaultdict(set)
         self._index_nx = defaultdict(set)
         self._index_bf_type = defaultdict(set)
@@ -17,6 +18,9 @@ class ReconstructionCatalog:
         idx = len(self._items)
         self._items.append(reconstruction)
         self._all_ids.add(idx)
+
+        if getattr(reconstruction, "name", None) is not None:
+            self._index_name[reconstruction.name].add(idx)
 
         ds_c = reconstruction.data_size_config
         if ds_c is not None:
@@ -45,6 +49,7 @@ class ReconstructionCatalog:
     def query(
         self,
         *,
+        name=None,
         nz=None,
         nx=None,
         bf_type=None,
@@ -54,6 +59,8 @@ class ReconstructionCatalog:
     ):
         candidates = set(self._all_ids)
 
+        if name is not None:
+            candidates &= self._index_name.get(name, set())
         if nz is not None:
             candidates &= self._index_nz.get(nz, set())
         if nx is not None:

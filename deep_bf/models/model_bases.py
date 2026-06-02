@@ -5,8 +5,8 @@ class ModelBase(nn.Module):
         super().__init__()
         self.layers = layers 
 
-    def forward(self, data, ids, angles):
-        x = data
+    def forward(self, batch_data, ids, angles):
+        x = batch_data
 
         for layer in self.layers:
             x = layer(x, ids, angles)

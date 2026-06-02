@@ -5,6 +5,7 @@ from ...constants.bf import PWDataType
 def get_bmode(data, mode, vmin=-60, vmax=0, eps=1e-10):
     if mode == PWDataType.RF:
         env = np.abs(hilbert(data, axis=0))
+        # env = np.abs(data)
     elif mode in (PWDataType.IQ_COMPLEX, PWDataType.IQ_COMPLEX_DEMOD):
         env = np.abs(data)
     elif mode == PWDataType.IQ_SPLIT:
@@ -15,8 +16,9 @@ def get_bmode(data, mode, vmin=-60, vmax=0, eps=1e-10):
     # TODO: Analizar bien cual es la problematica del b-mode (la simu da una envolvente por los 1e-24)
     # env = np.asarray(env, dtype=np.float32)
     # env = np.nan_to_num(env, nan=0.0, posinf=0.0, neginf=0.0)
-    max_env = float(np.max(env))
 
+    max_env = float(np.max(env))
+    
     # Normalizacion lineal (clave para señales de muy baja amplitud)
     env = env / max_env
     # Piso numerico sin mover el maximo por encima de 0 dB

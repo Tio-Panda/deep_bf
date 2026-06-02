@@ -1,27 +1,30 @@
-from .beamformer import ApodConfig, BeamformerConfig, CompoundingConfig, ResamplerConfig
-
-from .experiments import ExperimentConfig
-
+from .beamformer import (
+    ApodConfig,
+    BeamformerConfig,
+    BeamformerSetup,
+    CompoundingConfig,
+    DataTypeConfig,
+    ResamplerConfig,
+)
+from .experiments import Experiment
 from .model import (
     ActivationConfig,
     ArchitectureCnnBfConfig,
     Conv2dInitConfig,
-    ModelConfig,
+    ModelPack,
 )
 from .trainloop import (
     CriterionConfig,
     HyperparametersConfig,
     OptimizerConfig,
     SchedulerConfig,
-    TrainLoopConfig,
+    TrainLoopSetup,
 )
 from .webdataset_beamformer import (
+    DataPreprocessingConfig,
     DataSizeConfig,
-    DataTypeConfig,
-    ResizeGtConfig,
     SamplesOrganizationConfig,
-    TransformDataConfig,
-    WebDatasetBeamformerConfig,
+    WebDatasetBeamformerPack,
 )
 
 __all__ = [
@@ -29,20 +32,20 @@ __all__ = [
     "ApodConfig",
     "ArchitectureCnnBfConfig",
     "BeamformerConfig",
+    "BeamformerSetup",
     "CompoundingConfig",
     "Conv2dInitConfig",
     "CriterionConfig",
+    "DataPreprocessingConfig",
     "DataSizeConfig",
     "DataTypeConfig",
-    "ExperimentConfig",
+    "Experiment",
     "HyperparametersConfig",
-    "ModelConfig",
+    "ModelPack",
     "OptimizerConfig",
-    "ResizeGtConfig",
     "ResamplerConfig",
     "SamplesOrganizationConfig",
     "SchedulerConfig",
-    "TransformDataConfig",
-    "TrainLoopConfig",
-    "WebDatasetBeamformerConfig",
+    "TrainLoopSetup",
+    "WebDatasetBeamformerPack",
 ]

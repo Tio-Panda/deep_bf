@@ -1,24 +1,34 @@
-from ..entities import ExperimentConfig
 from .base import BaseRepository
 
 
 class ExperimentsRepository(BaseRepository):
-    def get_experiment_config(self, id: int) -> ExperimentConfig:
-        row = self._fetch_one(
+    def add_experiment(
+        self,
+        description: str,
+        model_pack_id: int,
+        trainloop_setup_id: int,
+        webdataset_beamformer_pack_id: int,
+    ) -> int:
+        return self._insert(
             (
-                "SELECT id, version, webdataset_beamformer_id, trainloop_id, model_id, commit_hash, commit_msg "
-                "FROM experiments WHERE id = ?"
+                "INSERT INTO experiment "
+                "(description, model_pack_id, trainloop_setup_id, webdataset_beamformer_pack_id) "
+                "VALUES (?, ?, ?, ?)"
+            ),
+            (
+                description,
+                model_pack_id,
+                trainloop_setup_id,
+                webdataset_beamformer_pack_id,
+            ),
+        )
+
+    def get_experiment_row(self, id: int):
+        return self._fetch_one(
+            (
+                "SELECT id, description, model_pack_id, trainloop_setup_id, webdataset_beamformer_pack_id "
+                "FROM experiment WHERE id = ?"
             ),
             (id,),
             f"experiment id={id}",
-        )
-
-        return ExperimentConfig(
-            id=int(row["id"]),
-            version=int(row["version"]),
-            webdataset_beamformer_id=int(row["webdataset_beamformer_id"]),
-            trainloop_id=int(row["trainloop_id"]),
-            model_id=int(row["model_id"]),
-            commit_hash=str(row["commit_hash"]),
-            commit_msg=str(row["commit_msg"]),
         )

@@ -1,5 +1,5 @@
 from ..config_registery import (
-    TrainLoopPacking,
+    TrainLoopSetup,
     CriterionConfig, 
     OptimizerConfig,
     SchedulerConfig
@@ -60,7 +60,7 @@ def set_scheduler(optimizer, config: SchedulerConfig):
     return scheduler
 
 
-def set_train_strategy(model: nn.Module, config: TrainLoopPacking):
+def set_train_strategy(model: nn.Module, config: TrainLoopSetup):
     cC = config.criterion_config
     oC = config.optimizer_config
     sC = config.scheduler_config

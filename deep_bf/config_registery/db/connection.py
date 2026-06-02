@@ -5,16 +5,11 @@ from ..errors import SchemaNotInitializedError
 
 DEFAULT_DB_NAME = "config_registery.db"
 REQUIRED_TABLES = {
-    "compounding",
-    "data_size",
-    "data_type",
-    "experiments",
-    "resize_gt",
-    "samples_organization",
-    "transform_data",
-    "webdataset_beamformer",
-    "model",
-    "trainloop",
+    "experiment",
+    "model_pack",
+    "trainloop_setup",
+    "webdataset_beamformer_pack",
+    "beamformer_setup",
 }
 
 

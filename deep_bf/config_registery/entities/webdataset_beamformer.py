@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from .beamformer import BeamformerSetup
+
 
 @dataclass
 class DataSizeConfig:
@@ -11,7 +13,7 @@ class DataSizeConfig:
 
 
 @dataclass
-class DataTypeConfig:
+class DataPreprocessingConfig:
     id: int
     type: str
     params: dict[str, Any]
@@ -32,25 +34,9 @@ class SamplesOrganizationConfig:
 
 
 @dataclass
-class ResizeGtConfig:
+class WebDatasetBeamformerPack:
     id: int
-    type: str
-    params: dict[str, Any]
-
-
-@dataclass
-class TransformDataConfig:
-    id: int
-    type: str
-    params: dict[str, Any]
-
-
-@dataclass
-class WebDatasetBeamformerConfig:
-    id: int
-    gt_source: str
-    data_type_id: int
-    data_size_id: int
-    samples_organization_id: int
-    transform_data_id: int
-    resize_gt_id: int
+    beamformer_setup: BeamformerSetup
+    data_size_config: DataSizeConfig
+    data_preprocessing_config: DataPreprocessingConfig
+    samples_organization_config: SamplesOrganizationConfig

@@ -9,16 +9,19 @@ CODE_TARGET := $(SERVER):$(SERVER_HOME)
 
 PHONY: send_dataset, send_code, get_models, migrate_db
 
+train:
+	python3 train.py -location local -e_id 0 -db_mode no-general
+
 send_dataset:
 	rsync -vrt $(DATASET_LOCAL)/webdataset_beamformer $(SERVER):$(WORKSPACE)/dataset
 
 send_code:
 	rsync -vrt $(LOCAL)/deep_bf $(CODE_TARGET)
 	rsync -vrt $(LOCAL)/train.py $(CODE_TARGET)
-	rsync -vrt $(LOCAL)/global_variables.py $(CODE_TARGET)
 	rsync -vrt $(LOCAL)/batchfile_single.sh $(CODE_TARGET)
 	rsync -vrt $(LOCAL)/batchfile_all.sh $(CODE_TARGET)
 	rsync -vrt $(LOCAL)/params.txt $(CODE_TARGET)
+	rsync -vrt $(LOCAL)/requirements.txt $(CODE_TARGET)
 
 get_models:
 	rsync -azP $(SERVER):$(WORKSPACE)/models $(LOCAL)

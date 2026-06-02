@@ -33,9 +33,9 @@ class HyperparametersConfig:
 
 
 @dataclass
-class TrainLoopConfig:
+class TrainLoopSetup:
     id: int
-    criterion_id: int
-    optimizer_id: int
-    scheduler_id: int
-    hyperparameters_id: int
+    criterion_config: CriterionConfig
+    optimizer_config: OptimizerConfig
+    scheduler_config: SchedulerConfig
+    hyperparameters_config: HyperparametersConfig

@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 
+from .model import ModelPack
+from .trainloop import TrainLoopSetup
+from .webdataset_beamformer import WebDatasetBeamformerPack
+
 
 @dataclass
-class ExperimentConfig:
+class Experiment:
     id: int
-    version: int
-    webdataset_beamformer_id: int
-    trainloop_id: int
-    model_id: int
-    commit_hash: str = "unknown"
-    commit_msg: str = ""
+    description: str
+    model_pack: ModelPack
+    trainloop_setup: TrainLoopSetup
+    webdataset_beamformer_pack: WebDatasetBeamformerPack

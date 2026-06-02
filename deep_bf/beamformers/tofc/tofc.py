@@ -6,9 +6,10 @@ from typing import List
 from ..utils.delays import compute_meshgrid, compute_d_rx, compute_samples_idx_by_angles
 from ..resampler.resampler_builder import resampler_builder
 from ...config_registery import ResamplerConfig
+from ...constants.bf import ResamplerType, PWDataType
 from ...wrapper.timer import Timer      
 
-class ToFCRealTime(nn.Module):
+class ToFCClassic(nn.Module):
     def __init__(self, pw, resampler_configs:List[ResamplerConfig], nz, nx, nyquist=False, batch_size=5):
         super().__init__()
         self.pw = pw
@@ -55,3 +56,25 @@ class ToFCRealTime(nn.Module):
         times = [self.timer.times["pre-align"] + tofc_time] * B
 
         return tofc_data, times
+
+class ToFC(nn.Module):
+    def __init__(self, resampler, batch_size=1):
+        super().__init__()
+        self.resampler = resampler
+        self.batch_size = batch_size
+
+    def forward(self, batch_data, batch_samples_idx):
+        b, nc, _ = batch_data.shape
+        _, _, nz, nx = batch_samples_idx.shape
+
+        batch_tofc_data = torch.empty(
+            b, nc, nz, nx, device=batch_data.device, dtype=batch_data.dtype
+        )
+
+        for s in range(0, b, self.batch_size):
+            e = min(s + self.batch_size, b)
+            batch_tofc_data[s:e] = self.resampler(batch_data[s:e], batch_samples_idx[s:e])
+
+        return batch_tofc_data
+
+

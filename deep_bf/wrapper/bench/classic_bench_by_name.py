@@ -7,7 +7,7 @@ from typing import List
 
 from ...beamformers.apod.apod_builder import apod_builder
 from ...beamformers.bf.bf_builder import bf_builder
-from ...beamformers.tofc.tofc import ToFCRealTime
+from ...beamformers.tofc.tofc import ToFCClassic
 from ...beamformers.compounding.compounder_builder import compounder_builder
 
 from ...wrapper.timer import Timer
@@ -72,7 +72,7 @@ class FullClassicBench(nn.Module):
                 nx = dsC.nx
 
                 meshgrid_nyquist = nz == -1
-                self.tofc_gen = ToFCRealTime(pw, self.resamplers, nz, nx, meshgrid_nyquist, self.angle_batch_size).to(self.device)
+                self.tofc_gen = ToFCClassic(pw, self.resamplers, nz, nx, meshgrid_nyquist, self.angle_batch_size).to(self.device)
 
                 for aC in self.apods:
                     apod_type = aC.type
@@ -117,8 +117,14 @@ class FullClassicBench(nn.Module):
                                     times.append(_times)
 
                                 for cC in self.compoundings:
-                                    cmp = compounder_builder(cC, pw)
-                                    _data = cmp(bf_data)
+
+                                    # TODO: Implementar esto mejor
+                                    if cC.type != "NONE":
+                                        cmp = compounder_builder(cC, pw)
+                                        _data = cmp(bf_data)
+                                    else:
+                                        center_angle = pw.na // 2
+                                        _data = bf_data[center_angle]
 
                                     reconstruction = Reconstruction(
                                         pw,

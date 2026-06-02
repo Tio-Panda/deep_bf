@@ -1,9 +1,19 @@
 import argparse
 import re
 import sqlite3
+import sys
 from pathlib import Path
 
-from .connection import create_connection, default_db_path
+if __package__ is None or __package__ == "":
+    repo_root = Path(__file__).resolve().parents[3]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    from deep_bf.config_registery.db.connection import (  # type: ignore
+        create_connection,
+        default_db_path,
+    )
+else:
+    from .connection import create_connection, default_db_path  # pragma: no cover
 
 MIGRATION_FILE_RE = re.compile(r"^(\d+)_([a-zA-Z0-9_\-]+)\.sql$")
 

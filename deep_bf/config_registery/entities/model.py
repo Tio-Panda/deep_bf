@@ -1,15 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-
-@dataclass
-class ModelConfig:
-    id: int
-    family: str
-    model_id: int
-    conv2d_init_id: int
-    activation_id: int
-    beamformer_id: int
+from .beamformer import BeamformerSetup
 
 
 @dataclass
@@ -37,3 +29,14 @@ class ArchitectureCnnBfConfig:
     kernel: tuple[int, int]
     padding: str
     bias: bool
+
+
+@dataclass
+class ModelPack:
+    id: int
+    family: str
+    model_id: int
+    conv2d_init_config: Conv2dInitConfig
+    activation_config: ActivationConfig
+    architecture_configs: list[ArchitectureCnnBfConfig]
+    beamformer_setup: BeamformerSetup

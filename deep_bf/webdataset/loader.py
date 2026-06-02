@@ -1,9 +1,8 @@
 import webdataset as wds
 import random
 from torch.utils.data import DataLoader
-from pathlib import Path
 
-from ..config_registery import HyperparametersConfig, PathCenter
+from ..config_registery import HyperparametersConfig, PathCenter, WebDatasetBeamformerPack
 
 def prepare(sample):
     sample["sii.txt"] = int(sample["sii.txt"])
@@ -31,15 +30,14 @@ def define_dataset(urls, batch_size, seed, is_train=True):
 
     return dataset
 
-
-def get_datasets(config: HyperparametersConfig, num_workers, pin_memory, location="local"):
-    seed = config.seed
-    batch_size = config.batch_size
+def get_datasets(hC: HyperparametersConfig, wdbP: WebDatasetBeamformerPack, num_workers, pin_memory, mode="general", location="local"):
+    seed = hC.seed
+    batch_size = hC.batch_size
 
     with PathCenter(location=location) as pc:
-        path = pc.dataset_paths.webdataset_beamformer
-        train_path = Path(path) / "train"
-        val_path = Path(path) / "val"
+        wp = pc.get_webdataset_beamformer_paths(wdbP, mode=mode)
+        train_path = wp.train_path
+        val_path = wp.val_path
     
     urls = []
     for _path in [train_path, val_path]:

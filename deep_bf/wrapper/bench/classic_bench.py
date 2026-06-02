@@ -7,7 +7,7 @@ from typing import List
 
 from ...beamformers.apod.apod_builder import apod_builder
 from ...beamformers.bf.bf_builder import bf_builder
-from ...beamformers.tofc.tofc import ToFCRealTime
+from ...beamformers.tofc.tofc import ToFCClassic
 from ...beamformers.compounding.compounder_builder import compounder_builder
 
 from ...wrapper.timer import Timer
@@ -59,13 +59,14 @@ class ClassicBench(nn.Module):
             nx = dsC.nx
 
             meshgrid_nyquist = nz == -1
-            self.tofc_gen = ToFCRealTime(self.pw, self.resamplers, nz, nx, meshgrid_nyquist, self.angle_batch_size).to(self.device)
+            self.tofc_gen = ToFCClassic(self.pw, self.resamplers, nz, nx, meshgrid_nyquist, self.angle_batch_size).to(self.device)
 
             for aC in self.apods:
                 apod_type = aC.type
                 with self.timer.measure(f"{apod_type}_{nz}"):
                     Z, X = self.tofc_gen.get_ZX()
                     apod = apod_builder(Z, X, self.pw.probe_geometry, aC)
+                    # TODO: Crear una clase como Compounding que se encargue de la apodizacion
 
                 for bfC in self.bfs:
                     bf_type = bfC.type
@@ -92,6 +93,9 @@ class ClassicBench(nn.Module):
                                 timer = Timer()
                                 with timer.measure(f"{bf_type}_{nz}"):
                                     with torch.no_grad():
+                                        # TODO: Con la clase de apodizacion creada, reemplazar para que los bf funcionen solo con tofc_data
+                                        # apod_data = apod(tofc_data)
+                                        # bf_data[s:e] = bf(apod_data)
                                         bf_data[s:e] = bf(tofc_data, apod)
 
                                 _times = (

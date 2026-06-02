@@ -36,7 +36,7 @@ class PWData(ABC):
         self.aperture_width = pitch * nc
         self.xlims = [-self.aperture_width/2, self.aperture_width/2]
 
-        last_sample_time = nc / fs
+        last_sample_time = ns / fs
         self.img_depth = c0 / 2 * last_sample_time
         
     def __str__(self):

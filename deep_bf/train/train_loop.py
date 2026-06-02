@@ -5,8 +5,7 @@ import torch
 import json
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from pathlib import Path
-from dataclasses import asdict, astuple
+from dataclasses import asdict
 
 from deep_bf.webdataset.loader import get_datasets
 from .save import make_backup, make_checkpoint, save_model
@@ -14,8 +13,7 @@ from .load import load_backup
 from .logs import append_epoch_loss, append_epoch_weights
 from .build import set_train_strategy
 
-from ..config_registery import PathCenter, ExperimentPacking
-from ..webdataset.gsi.gsi_for_training import GlobalSamplesIdxForTraining
+from ..config_registery import PathCenter, Experiment
 from ..models.model_builder import model_builder
 
 def set_seed(seed):
@@ -23,7 +21,6 @@ def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-
 
 def set_seed_worker(seed, id):
     seed = seed + id
@@ -34,7 +31,8 @@ def set_seed_worker(seed, id):
 # TODO: Agregar mas mensajes de log, para saver que se guardo un mejor modelo, si bajo lr, etc.
 
 def train_loop(
-    config: ExperimentPacking, 
+    config: Experiment, 
+    dataset_mode,
     interval_epoch_save, 
     num_workers, 
     pin_memory, 
@@ -43,7 +41,8 @@ def train_loop(
     dtype=torch.float32
 ):
     # TODO: implementar logica para soportar un scheduler=None o distintos tipos de scheduler
-    hC = config.trainloop.hyperparameters_config
+    hC = config.trainloop_setup.hyperparameters_config
+    wdbP = config.webdataset_beamformer_pack
 
     with PathCenter(location=location) as pc:
         mp = pc.get_model_paths(config)
@@ -53,10 +52,8 @@ def train_loop(
         EPOCH_CKPT_PATH = mp.epochs
         LOGS_PATH = mp.logs
     
-    gsi = GlobalSamplesIdxForTraining(config.webdataset_beamformer, cache_limit=15, location=location, reset=False)
-    data_type = config.webdataset_beamformer.data_type_config.type
     BATCH_SIZE = hC.batch_size
-    model = model_builder(data_type, config.model, gsi, BATCH_SIZE)
+    model = model_builder(config.model_pack, batch_size=BATCH_SIZE, location=location)
     model = model.to(device=device, dtype=dtype)
 
     print("Saving model metadata")
@@ -65,9 +62,9 @@ def train_loop(
         json.dump(metadata, f, indent=4, ensure_ascii=False)
 
     N_EPOCHS = hC.n_epoch
-    train_loader, val_loader = get_datasets(hC, num_workers, pin_memory, location)
-    criterion, optimizer, scheduler = set_train_strategy(model, config.trainloop)
-    criterion_name = config.trainloop.criterion_config.type
+    train_loader, val_loader = get_datasets(hC, wdbP, mode=dataset_mode, num_workers=num_workers, pin_memory=pin_memory, location=location)
+    criterion, optimizer, scheduler = set_train_strategy(model, config.trainloop_setup)
+    criterion_name = config.trainloop_setup.criterion_config.type
 
     global_step = 0
     start_epoch = -1
@@ -95,8 +92,13 @@ def train_loop(
         )
         for sample in train_pbar:
             rfs = sample[0].to(device, non_blocking=True)
-            ids = sample[1].to(device, non_blocking=True)
-            angles = sample[2].to(device, non_blocking=True)
+
+            # ids = sample[1].to(device, non_blocking=True)
+            # angles = sample[2].to(device, non_blocking=True)
+
+            ids = sample[1]
+            angles = sample[2]
+
             targets = sample[3].to(device, non_blocking=True).unsqueeze(1)
 
             optimizer.zero_grad()
@@ -139,8 +141,13 @@ def train_loop(
             )
             for sample in val_pbar:
                 rfs = sample[0].to(device, non_blocking=True)
-                ids = sample[1].to(device, non_blocking=True)
-                angles = sample[2].to(device, non_blocking=True)
+
+                # ids = sample[1].to(device, non_blocking=True)
+                # angles = sample[2].to(device, non_blocking=True)
+
+                ids = sample[1]
+                angles = sample[2]
+
                 targets = sample[3].to(device, non_blocking=True).unsqueeze(1)
 
                 outputs = model(rfs, ids, angles)

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name deep_bf
-#SBATCH -t 5:00:00
+#SBATCH -t 6:00:00
 #SBATCH -p batch
 #SBATCH -q batch
 #SBATCH --cpus-per-task 4
@@ -17,8 +17,9 @@ conda activate pytorch
 
 LINE=$(sed -n "${SLURM_ARRAY_TASK_ID}p" params.txt)
 
-read -r LOCATION EXPERIMENT_ID<<< "$LINE"
+read -r LOCATION EXPERIMENT_ID DATASET_MODE<<< "$LINE"
 
 python train.py \
     -location "$LOCATION" \
-    -e_id "$EXPERIMENT_ID"
+    -e_id "$EXPERIMENT_ID" \
+    -db_mode "$DATASET_MODE"

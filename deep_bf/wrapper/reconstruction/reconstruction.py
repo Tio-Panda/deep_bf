@@ -1,5 +1,14 @@
+from typing import Any
+
 import numpy as np
 
+from ...config_registery.entities import (
+    ApodConfig,
+    BeamformerConfig,
+    CompoundingConfig,
+    DataSizeConfig,
+    ResamplerConfig,
+)
 from ...beamformers.utils.b_mode import get_bmode
 from ...constants.bf import PWDataType
 
@@ -7,16 +16,16 @@ from ...constants.bf import PWDataType
 class Reconstruction:
     def __init__(
         self,
-        pw,
-        data,
-        mode,
-        times,
-        data_size_config=None,
-        beamformer_config=None,
-        resampler_config=None,
-        apod_config=None,
-        compounding_config=None,
-    ):
+        pw: Any,
+        data: Any,
+        mode: PWDataType,
+        times: Any,
+        data_size_config: DataSizeConfig,
+        beamformer_config: BeamformerConfig,
+        resampler_config: ResamplerConfig,
+        apod_config: ApodConfig,
+        compounding_config: CompoundingConfig,
+    ) -> None:
         self.zlims = np.array(pw.zlims) * 1e3
         self.xlims = np.array(pw.xlims) * 1e3
         self.data = data.cpu().numpy()
@@ -32,7 +41,6 @@ class Reconstruction:
 
     def get_bmode(self, vmin=-60, vmax=0, eps=1e-10):
         b_mode = get_bmode(self.data, self.mode, vmin=vmin, vmax=vmax, eps=eps)
-        print(b_mode.shape)
 
         return b_mode
 
@@ -134,4 +142,3 @@ class Reconstruction:
         )
 
     __repr__ = __str__
-
