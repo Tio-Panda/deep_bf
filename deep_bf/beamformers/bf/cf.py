@@ -12,18 +12,14 @@ class CFBase(nn.Module, ABC):
         self.eps = eps
 
     @abstractmethod
-    def _apod_tofc_data(self, tofc_data, apod) -> torch.Tensor:
-        pass
-    @abstractmethod
     def _compute_coherent_and_incoherent_power(self, das, tofc_data) -> Tuple[torch.Tensor, torch.Tensor]:
         pass
     @abstractmethod
     def _compute_output(self, cf, das) -> torch.Tensor:
         pass
 
-    def forward(self, tofc_data, apod):
+    def forward(self, tofc_data):
         nc = tofc_data.shape[1]
-        tofc_data = self._apod_tofc_data(tofc_data, apod)
         das = torch.sum(tofc_data, dim=1) # RF/IQComplex: [B, nz, nx] | IQ: [B, nz, nx, 2]
 
         coherent_power, incoherent_power = self._compute_coherent_and_incoherent_power(das, tofc_data)
@@ -37,8 +33,6 @@ class CFBase(nn.Module, ABC):
 class CF3D(CFBase):
     def __init__(self, batch_size, eps):
         super().__init__(batch_size, eps)
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0)  # RF/IQComplex: [B, nc, nz, nx]
     def _compute_coherent_and_incoherent_power(self, das, tofc_data):
         coherent_power = torch.abs(das) ** 2
         incoherent_power = torch.sum(tofc_data ** 2, dim=1)
@@ -49,8 +43,6 @@ class CF3D(CFBase):
 class CF4D(CFBase):
     def __init__(self, batch_size, eps):
         super().__init__(batch_size, eps)
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0).unsqueeze(-1)  # IQ: [B, nc, nz, nx, 2]
     def _compute_coherent_and_incoherent_power(self, das, tofc_data):
         coherent_power = torch.sum(torch.abs(das) ** 2, dim=-1)
         incoherent_power = torch.sum(torch.sum(tofc_data ** 2, dim=-1), dim=1)

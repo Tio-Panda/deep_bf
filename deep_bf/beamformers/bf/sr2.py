@@ -44,16 +44,6 @@ class SR2Base(nn.Module, ABC):
         )
 
     @abstractmethod
-    def _apod_tofc_data(
-        self, tofc_data: torch.Tensor, apod: torch.Tensor
-    ) -> torch.Tensor:
-        pass
-
-    @abstractmethod
-    def _channel_weight(self, apod: torch.Tensor) -> torch.Tensor:
-        pass
-
-    @abstractmethod
     def _to_nchw(self, x: torch.Tensor) -> torch.Tensor:
         pass
 
@@ -61,10 +51,10 @@ class SR2Base(nn.Module, ABC):
     def _from_nchw(self, x_nchw: torch.Tensor) -> torch.Tensor:
         pass
 
-    def _A(self, x: torch.Tensor, ch_w: torch.Tensor) -> torch.Tensor:
+    def _A(self, x: torch.Tensor) -> torch.Tensor:
         return x
 
-    def _At(self, r: torch.Tensor, ch_w: torch.Tensor) -> torch.Tensor:
+    def _At(self, r: torch.Tensor) -> torch.Tensor:
         return r
 
     def _psi_t(self, x_nchw: torch.Tensor):
@@ -112,9 +102,8 @@ class SR2Base(nn.Module, ABC):
             out.append((yl_p, yh_p))
         return out
 
-    def forward(self, tofc_data: torch.Tensor, apod: torch.Tensor) -> torch.Tensor:
-        m = self._apod_tofc_data(tofc_data, apod)
-        ch_w = self._channel_weight(apod)
+    def forward(self, tofc_data: torch.Tensor) -> torch.Tensor:
+        m = tofc_data
 
         y = torch.zeros_like(m[:, 0, ...])
         _, nc = m.shape[:2]
@@ -135,7 +124,7 @@ class SR2Base(nn.Module, ABC):
             u_tilde = self._coeffs_add_scaled(u, psi_t_xbar, self.sigma)
             u = self._proj_linf_ball(u_tilde)
 
-            grad_data = self._At(self._A(x, ch_w) - y, ch_w)
+            grad_data = self._At(self._A(x) - y)
             grad_sparse = self._from_nchw(self._psi(u))
 
             x_new = x - self.tau * (grad_data + grad_sparse)
@@ -146,14 +135,6 @@ class SR2Base(nn.Module, ABC):
 
 
 class SR2_3D(SR2Base):
-    def _apod_tofc_data(
-        self, tofc_data: torch.Tensor, apod: torch.Tensor
-    ) -> torch.Tensor:
-        return tofc_data * apod.unsqueeze(0)
-
-    def _channel_weight(self, apod: torch.Tensor) -> torch.Tensor:
-        return apod.unsqueeze(0)
-
     def _to_nchw(self, x: torch.Tensor) -> torch.Tensor:
         return x.unsqueeze(1)
 
@@ -165,14 +146,6 @@ class SR2_3D(SR2Base):
 
 
 class SR2_4D(SR2Base):
-    def _apod_tofc_data(
-        self, tofc_data: torch.Tensor, apod: torch.Tensor
-    ) -> torch.Tensor:
-        return tofc_data * apod.unsqueeze(0).unsqueeze(-1)
-
-    def _channel_weight(self, apod: torch.Tensor) -> torch.Tensor:
-        return apod.unsqueeze(0).unsqueeze(-1)
-
     def _to_nchw(self, x: torch.Tensor) -> torch.Tensor:
         return x.permute(0, 3, 1, 2)
 

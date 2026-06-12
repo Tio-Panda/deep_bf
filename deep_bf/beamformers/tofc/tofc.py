@@ -6,7 +6,7 @@ from typing import List
 from ..utils.delays import compute_meshgrid, compute_d_rx, compute_samples_idx_by_angles
 from ..resampler.resampler_builder import resampler_builder
 from ...config_registery import ResamplerConfig
-from ...constants.bf import ResamplerType, PWDataType
+# from ...constants.bf import ResamplerType, PWDataType
 from ...wrapper.timer import Timer      
 
 class ToFCClassic(nn.Module):

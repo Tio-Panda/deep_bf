@@ -11,9 +11,6 @@ class IMAPBase(nn.Module, ABC):
         self.eps = eps
 
     @abstractmethod
-    def _apod_tofc_data(self, tofc_data, apod) -> torch.Tensor:
-        pass
-    @abstractmethod
     def _signal_power(self, x) -> torch.Tensor:
         pass
     @abstractmethod
@@ -23,10 +20,9 @@ class IMAPBase(nn.Module, ABC):
     def _apply_weight(self, w, x_das):
         pass
 
-    def forward(self, tofc_data, apod):
+    def forward(self, tofc_data):
         b, nc, nz, nx = tofc_data.shape[:4]
 
-        tofc_data = self._apod_tofc_data(tofc_data, apod)
         x_das = torch.mean(tofc_data, dim=1)
         x_hat = x_das
 
@@ -48,8 +44,6 @@ class IMAPBase(nn.Module, ABC):
         return x_hat
 
 class IMAP3D(IMAPBase):
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0) # RF / IQComplex: [B, nc, nz, nx]
     def _signal_power(self, x):
         return torch.abs(x) ** 2
     def _accumulate_noise_power(self, diff):
@@ -58,8 +52,6 @@ class IMAP3D(IMAPBase):
         return w * x_das
 
 class IMAP4D(IMAPBase):
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0).unsqueeze(-1) # IQ split: [B, nc, nz, nx, 2]
     def _signal_power(self, x):
         return torch.sum(x ** 2, dim=-1)  # [B,nz,nx]
     def _accumulate_noise_power(self, diff):

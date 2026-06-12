@@ -1,6 +1,5 @@
-server 10 no-general
-server 11 no-general
-server 14 no-general
-server 15 no-general
-server 16 no-general
-server 17 no-general
+server 0 no-general
+server 1 no-general
+server 2 no-general
+server 3 no-general
+server 4 no-general

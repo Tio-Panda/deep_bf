@@ -203,8 +203,8 @@ INSERT INTO apod_config (id, type, params_json) VALUES (3, 'DynamicReceiveApertu
 INSERT INTO apod_config (id, type, params_json) VALUES (4, 'DynamicReceiveAperture', '{"f_num": 1.75, "window": "tukey25"}');
 
 INSERT INTO beamformer_config ("id", "type", "params_json") VALUES (0, 'DAS', '{"batch_size": 128}');
-INSERT INTO beamformer_config ("id", "type", "params_json") VALUES (1, 'MV', '{"L": 16, "batch_size": 1, "diagonal_loading": 0.001, "eps": 1e-10, "z_chunk": 512}');
-INSERT INTO beamformer_config ("id", "type", "params_json") VALUES (2, 'F-DMAS', '{"batch_size":128, "BW": 0.6, "bp_window": "tukey50", "eps":1e-10, "min_band_bins": 4}');
+INSERT INTO beamformer_config ("id", "type", "params_json") VALUES (1, 'MV', '{ "batch_size": 1, "z_chunk": 1024, "L": 32, "temporal_radius": 3, "eps": 1e-10 }');
+INSERT INTO beamformer_config ("id", "type", "params_json") VALUES (2, 'F-DMAS', '{ "BW": 0.5, "transition_low_ratio": 0.6, "transition_high_ratio": 0.4, "ripple": 1e-3, "batch_size": 128, "eps": 1e-10, "min_band_bins": 4 }');
 INSERT INTO beamformer_config ("id", "type", "params_json") VALUES (3, 'CF', '{"batch_size": 128, "eps": 1e-08}');
 INSERT INTO beamformer_config ("id", "type", "params_json") VALUES (4, 'iMAP', '{"batch_size":128, "num_iters":2, "eps":1e-8}');
 INSERT INTO beamformer_config ("id", "type", "params_json") VALUES (5, 'SparseRegularization', '{"batch_size": 128, "eps": 1e-08, "lam": 0.001, "num_iters": 20, "step": 1.0}');

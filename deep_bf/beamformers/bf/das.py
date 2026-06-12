@@ -15,13 +15,8 @@ class DASBase(nn.Module, ABC):
     def _malloc_output(self, b, nz, nx, device, dtype) -> torch.Tensor:
         pass
 
-    @abstractmethod
-    def _apod_tofc_data(self, tofc_data, apod) -> torch.Tensor:
-        pass
-
-    def forward(self, tofc_data, apod):
+    def forward(self, tofc_data):
         b, nc, nz, nx = tofc_data.shape[:4]
-        tofc_data = self._apod_tofc_data(tofc_data, apod)
         output = self._malloc_output(b, nz, nx, tofc_data.device, tofc_data.dtype)
 
         for s in range(0, nc, self.batch_size):
@@ -38,15 +33,9 @@ class DAS3D(DASBase):
     def _malloc_output(self, b, nz, nx, device, dtype):
         return torch.zeros(b, nz, nx, device=device, dtype=dtype)
 
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0)  # RF/IQComplex: [B, nc, nz, nx]
-
 class DAS4D(DASBase):
     def __init__(self, batch_size):
         super().__init__(batch_size)
 
     def _malloc_output(self, b, nz, nx, device, dtype):
         return torch.zeros(b, nz, nx, 2, device=device, dtype=dtype)
-
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0).unsqueeze(-1)  # IQ: [B, nc, nz, nx, 2]

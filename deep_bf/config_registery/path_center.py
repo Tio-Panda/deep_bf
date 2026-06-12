@@ -52,7 +52,8 @@ class PathCenter():
         img = self.dataset_base / "img"
 
         self.dataset_paths = DatasetPaths(raw, ground_truth, str(webdataset_beamformer), samples_idx, img)
-        self.dl = "/home/panda/rf_data"
+        self.dl = "/home/panda/rf_data/dataset/raw"
+
     
     def get_webdataset_beamformer_paths(self, config: WebDatasetBeamformerPack, mode="general", create=True):
         prefix = "general" if mode == "general" else f"i_{config.id}"

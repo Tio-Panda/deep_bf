@@ -36,7 +36,7 @@ class MVB(nn.Module):
         self.register_buffer("rhs", torch.ones(L, 1))
         self.register_buffer("eye", torch.eye(L))
 
-    def forward(self, rfs, ids, apod=None):
+    def forward(self, rfs, ids):
         torch.set_float32_matmul_precision("high")
 
         B, nc, _ = rfs.shape
@@ -113,7 +113,7 @@ class MVBSimple(nn.Module):
         self.register_buffer("rhs", torch.ones(L, 1))
         self.register_buffer("eye", torch.eye(L))
 
-    def forward(self, sampled_data, apod=None):
+    def forward(self, sampled_data):
         torch.set_float32_matmul_precision("high")
 
         B, nc, _, nx = sampled_data.shape

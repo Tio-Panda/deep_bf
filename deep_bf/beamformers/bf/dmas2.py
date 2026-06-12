@@ -46,10 +46,6 @@ class FDMASBase(nn.Module, ABC):
         }
 
     @abstractmethod
-    def _apod_tofc_data(self, tofc_data, apod) -> torch.Tensor:
-        pass
-
-    @abstractmethod
     def _malloc_output(self, b, nz, nx, device, dtype) -> torch.Tensor:
         pass
 
@@ -207,14 +203,13 @@ class FDMASBase(nn.Module, ABC):
             x_fft = x_fft * H[None, :, None, None]
         return torch.fft.irfft(x_fft, n=x.shape[1], dim=1).real
 
-    def forward(self, tofc_data, apod):
+    def forward(self, tofc_data):
         if tofc_data.dim() not in (4, 5):
             raise ValueError(
                 f"Expected tofc_data to have 4 or 5 dims, got {tofc_data.dim()}"
             )
 
         b, nc, nz, nx = tofc_data.shape[:4]
-        tofc_data = self._apod_tofc_data(tofc_data, apod)
         sum_s_hat = self._malloc_output(b, nz, nx, tofc_data.device, tofc_data.dtype)
         sum_abs_s = self._malloc_output(b, nz, nx, tofc_data.device, tofc_data.dtype)
 
@@ -234,16 +229,10 @@ class FDMASBase(nn.Module, ABC):
 
 
 class FDMAS3D(FDMASBase):
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0)
-
     def _malloc_output(self, b, nz, nx, device, dtype):
         return torch.zeros(b, nz, nx, device=device, dtype=dtype)
 
 
 class FDMAS4D(FDMASBase):
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0).unsqueeze(-1)
-
     def _malloc_output(self, b, nz, nx, device, dtype):
         return torch.zeros(b, nz, nx, 2, device=device, dtype=dtype)

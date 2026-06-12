@@ -29,7 +29,7 @@ def get_exp_desc_title(reconstruction: ModelReconstruction, custom=""):
 
 
 def get_custom_title(title, custom=""):
-    return f"{title}"
+    return f"{custom}"
 
 # TODO: Agregar como parametro una funcion que con una reconstruccion me genere un subtitulo para el grafico.
 def simple_bmode(ax, reconstruction:Reconstruction|ModelReconstruction, fn_title, vmin=-60, vmax=0, eps=1e-10, custom=""):

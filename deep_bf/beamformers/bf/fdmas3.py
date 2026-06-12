@@ -79,7 +79,7 @@ class FDMAS3D(nn.Module):
         self._filter_cache[key] = H
         return H
 
-    def forward(self, tofc_data: torch.Tensor, apod: torch.Tensor) -> torch.Tensor:
+    def forward(self, tofc_data: torch.Tensor) -> torch.Tensor:
         if tofc_data.dim() != 4:
             raise ValueError(
                 f"Expected RF 3D tensor [B, nc, nz, nx], got {tuple(tofc_data.shape)}"
@@ -88,7 +88,7 @@ class FDMAS3D(nn.Module):
         self._validate()
 
         b, nc, nz, nx = tofc_data.shape
-        weighted = tofc_data * apod.unsqueeze(0)
+        weighted = tofc_data
 
         sum_s_hat = torch.zeros(b, nz, nx, device=weighted.device, dtype=weighted.dtype)
         sum_abs_s = torch.zeros(b, nz, nx, device=weighted.device, dtype=weighted.dtype)

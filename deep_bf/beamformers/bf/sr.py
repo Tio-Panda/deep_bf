@@ -28,10 +28,6 @@ class SRBase(nn.Module, ABC):
         pass
 
     @abstractmethod
-    def _apod_tofc_data(self, tofc_data, apod) -> torch.Tensor:
-        pass
-
-    @abstractmethod
     def _soft_threshold(self, x: torch.Tensor, thr: float) -> torch.Tensor:
         pass
 
@@ -46,13 +42,13 @@ class SRBase(nn.Module, ABC):
 
         return output / nc
 
-    def forward(self, tofc_data, apod):
+    def forward(self, tofc_data):
         if tofc_data.dim() not in (4, 5):
             raise ValueError(
                 f"Expected tofc_data to have 4 or 5 dims, got {tofc_data.dim()}"
             )
 
-        y = self._das_mean(self._apod_tofc_data(tofc_data, apod))
+        y = self._das_mean(tofc_data)
         x = y.clone()
         thr = self.lam * self.step
 
@@ -78,9 +74,6 @@ class SR3D(SRBase):
     def _malloc_output(self, b, nz, nx, device, dtype):
         return torch.zeros(b, nz, nx, device=device, dtype=dtype)
 
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0)
-
     def _soft_threshold(self, x: torch.Tensor, thr: float) -> torch.Tensor:
         return torch.sign(x) * torch.relu(torch.abs(x) - thr)
 
@@ -98,9 +91,6 @@ class SR4D(SRBase):
 
     def _malloc_output(self, b, nz, nx, device, dtype):
         return torch.zeros(b, nz, nx, 2, device=device, dtype=dtype)
-
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0).unsqueeze(-1)
 
     def _soft_threshold(self, x: torch.Tensor, thr: float) -> torch.Tensor:
         mag = torch.sqrt(torch.sum(x**2, dim=-1) + self.eps)

@@ -34,10 +34,6 @@ class MVBase(nn.Module, ABC):
         self.register_buffer("rhs", torch.empty(0, 1), persistent=False)
 
     @abstractmethod
-    def _apod_tofc_data(self, tofc_data, apod) -> torch.Tensor:
-        pass
-
-    @abstractmethod
     def _to_solver_domain(self, x: torch.Tensor) -> torch.Tensor:
         pass
 
@@ -65,7 +61,7 @@ class MVBase(nn.Module, ABC):
         self._cache_nc = nc
         self._cache_M = M
 
-    def forward(self, tofc_data, apod):
+    def forward(self, tofc_data):
         if tofc_data.dim() not in (4, 5):
             raise ValueError(
                 f"Expected tofc_data to have 4 or 5 dims, got {tofc_data.dim()}"
@@ -74,7 +70,6 @@ class MVBase(nn.Module, ABC):
         torch.set_float32_matmul_precision("high")
 
         b, nc, nz, nx = tofc_data.shape[:4]
-        tofc_data = self._apod_tofc_data(tofc_data, apod)
         solver_data = self._to_solver_domain(tofc_data)
 
         self._build_runtime_buffers(nc, solver_data.device, solver_data.dtype)
@@ -129,9 +124,6 @@ class MVBase(nn.Module, ABC):
 
 
 class MV3D(MVBase):
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0)
-
     def _to_solver_domain(self, x: torch.Tensor) -> torch.Tensor:
         return x
 
@@ -140,9 +132,6 @@ class MV3D(MVBase):
 
 
 class MV4D(MVBase):
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0).unsqueeze(-1)
-
     def _to_solver_domain(self, x: torch.Tensor) -> torch.Tensor:
         if x.shape[-1] != 2:
             raise ValueError(

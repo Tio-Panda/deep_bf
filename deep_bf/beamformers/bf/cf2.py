@@ -17,10 +17,6 @@ class CFBase(nn.Module, ABC):
         pass
 
     @abstractmethod
-    def _apod_tofc_data(self, tofc_data: torch.Tensor, apod: torch.Tensor) -> torch.Tensor:
-        pass
-
-    @abstractmethod
     def _compute_coherent_power(self, das: torch.Tensor) -> torch.Tensor:
         pass
 
@@ -32,9 +28,8 @@ class CFBase(nn.Module, ABC):
     def _compute_output(self, cf: torch.Tensor, das: torch.Tensor) -> torch.Tensor:
         pass
 
-    def forward(self, tofc_data: torch.Tensor, apod: torch.Tensor) -> torch.Tensor:
+    def forward(self, tofc_data: torch.Tensor) -> torch.Tensor:
         b, nc, nz, nx = tofc_data.shape[:4]
-        tofc_data = self._apod_tofc_data(tofc_data, apod)
 
         das = self._malloc_das_output(b, nz, nx, tofc_data.device, tofc_data.dtype)
         incoherent_power = torch.zeros(
@@ -62,9 +57,6 @@ class CF3D(CFBase):
     def _malloc_das_output(self, b, nz, nx, device, dtype):
         return torch.zeros(b, nz, nx, device=device, dtype=dtype)
 
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0)
-
     def _compute_coherent_power(self, das):
         return torch.abs(das) ** 2
 
@@ -78,9 +70,6 @@ class CF3D(CFBase):
 class CF4D(CFBase):
     def _malloc_das_output(self, b, nz, nx, device, dtype):
         return torch.zeros(b, nz, nx, 2, device=device, dtype=dtype)
-
-    def _apod_tofc_data(self, tofc_data, apod):
-        return tofc_data * apod.unsqueeze(0).unsqueeze(-1)
 
     def _compute_coherent_power(self, das):
         return torch.sum(das**2, dim=-1)

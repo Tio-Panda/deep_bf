@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.fft
 
 from ..utils.bp_filter import get_freqs, pass_band_filter
+from ..apod.apod import apply_apodization
 
 
 class FDMAS(nn.Module):
@@ -78,9 +79,7 @@ class FDMAS(nn.Module):
             )
 
             sampled = sampled.view(n_angles, batch_size_elem, nz, nx)
-            sampled = sampled * apod_batch.unsqueeze(
-                0
-            )  # [n_angles, batch_size_elem, nz, nx] * [1, batch_size_elem, nz, nx]
+            sampled = apply_apodization(sampled, apod_batch)
 
             s_hat = torch.sign(sampled) * torch.sqrt(torch.abs(sampled))
 

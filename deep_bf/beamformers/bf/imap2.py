@@ -14,10 +14,6 @@ class IMAPBase(nn.Module, ABC):
         self.eps = eps
 
     @abstractmethod
-    def _apod_tofc_data(self, tofc_data: torch.Tensor, apod: torch.Tensor) -> torch.Tensor:
-        pass
-
-    @abstractmethod
     def _signal_power(self, x: torch.Tensor) -> torch.Tensor:
         pass
 
@@ -25,9 +21,8 @@ class IMAPBase(nn.Module, ABC):
     def _apply_weight(self, w: torch.Tensor, x_das: torch.Tensor) -> torch.Tensor:
         pass
 
-    def forward(self, tofc_data: torch.Tensor, apod: torch.Tensor) -> torch.Tensor:
+    def forward(self, tofc_data: torch.Tensor) -> torch.Tensor:
         b, nc, nz, nx = tofc_data.shape[:4]
-        tofc_data = self._apod_tofc_data(tofc_data, apod)
 
         x_das = torch.mean(tofc_data, dim=1)
         # x_das = torch.sum(tofc_data, dim=1)
@@ -52,9 +47,6 @@ class IMAPBase(nn.Module, ABC):
 
 
 class IMAP3D(IMAPBase):
-    def _apod_tofc_data(self, tofc_data: torch.Tensor, apod: torch.Tensor) -> torch.Tensor:
-        return tofc_data * apod.unsqueeze(0)
-
     def _signal_power(self, x: torch.Tensor) -> torch.Tensor:
         return torch.abs(x) ** 2
 
@@ -63,9 +55,6 @@ class IMAP3D(IMAPBase):
 
 
 class IMAP4D(IMAPBase):
-    def _apod_tofc_data(self, tofc_data: torch.Tensor, apod: torch.Tensor) -> torch.Tensor:
-        return tofc_data * apod.unsqueeze(0).unsqueeze(-1)
-
     def _signal_power(self, x: torch.Tensor) -> torch.Tensor:
         return torch.sum(x**2, dim=-1)
 

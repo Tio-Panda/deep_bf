@@ -15,7 +15,7 @@ class BeamformerType(StrEnum):
     IMAP = "iMAP"
     SR1 = "SparseRegularization"
     SR2 = "SparseRegularization2"
-
+    CB = "CompressingBeamforming"
 
 class ResamplerType(StrEnum):
     GRID_SAMPLE = "GridSample"

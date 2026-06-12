@@ -1,5 +1,28 @@
 import torch
 
+
+def apply_apodization(tofc_data, apod):
+    nc = apod.shape[0]
+    spatial_shape = apod.shape[1:]
+
+    if tofc_data.dim() == 4 and tofc_data.shape[1] == nc and tofc_data.shape[2:] == spatial_shape:
+        return tofc_data * apod.unsqueeze(0)
+
+    if (
+        tofc_data.dim() == 5
+        and tofc_data.shape[1] == nc
+        and tofc_data.shape[2:4] == spatial_shape
+        and tofc_data.shape[-1] == 2
+    ):
+        return tofc_data * apod.unsqueeze(0).unsqueeze(-1)
+
+    if tofc_data.dim() == 5 and tofc_data.shape[2] == nc and tofc_data.shape[3:] == spatial_shape:
+        return tofc_data * apod.unsqueeze(0).unsqueeze(0)
+
+    raise ValueError(
+        f"Unsupported tofc_data shape {tuple(tofc_data.shape)} for apod shape {tuple(apod.shape)}"
+    )
+
 def get_window(distance, aperture, kind="boxcar"):
     eps = 1e-10
     rel_dist = distance / (aperture + eps)

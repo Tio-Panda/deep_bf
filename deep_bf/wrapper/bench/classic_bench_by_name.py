@@ -5,6 +5,7 @@ import torch.nn as nn
 
 from typing import List
 
+from ...beamformers.apod.apod import apply_apodization
 from ...beamformers.apod.apod_builder import apod_builder
 from ...beamformers.bf.bf_builder import bf_builder
 from ...beamformers.tofc.tofc import ToFCClassic
@@ -105,7 +106,8 @@ class FullClassicBench(nn.Module):
                                     timer = Timer()
                                     with timer.measure(f"{name}_{bf_type}_{nz}"):
                                         with torch.no_grad():
-                                            bf_data[s:e] = bf(tofc_data, apod)
+                                            tofc_data = apply_apodization(tofc_data, apod)
+                                            bf_data[s:e] = bf(tofc_data)
 
                                     _times = (
                                         np.array(tofc_times)
